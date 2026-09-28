@@ -56,7 +56,7 @@ export async function POST(req: NextRequest) {
     const safeFolder = ALLOWED_FOLDERS.includes(folder) ? folder : 'misc';
 
     if (USE_CLOUDINARY) {
-      return new Promise((resolve, reject) => {
+      return new Promise<NextResponse>((resolve, reject) => {
         const uploadStream = cloudinary.uploader.upload_stream(
           { folder: `mechart3d/${safeFolder}`, resource_type: resourceType, timeout: 120000 },
           (error, result) => {
