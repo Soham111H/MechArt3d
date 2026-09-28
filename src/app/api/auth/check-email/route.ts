@@ -7,7 +7,7 @@ export async function POST(req: NextRequest) {
     // Rate limiting — prevent bulk enumeration: 10 checks per minute per IP
     const ip = getClientIp(req);
     const limit = await rateLimit(`check-email:${ip}`, 10, 60);
-    if (!limit.success) {
+    if (!limit.allowed) {
       return NextResponse.json({ available: false, error: "Too many requests" }, { status: 429 });
     }
 
