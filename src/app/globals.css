@@ -1,0 +1,301 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap');
+
+/* ─── CSS Custom Properties ─────────────────────────────────────────────────── */
+:root {
+  --background:        #ffffff;
+  --foreground:        #0f172a;
+  --muted:             #64748b;
+  --muted-bg:          #f8fafc;
+  --border:            #e2e8f0;
+  --card-bg:           #ffffff;
+  --primary:           #1D4ED8;
+  --primary-light:     #3B82F6;
+  --primary-fill:      #EFF6FF;
+  --navbar-bg:         rgba(255,255,255,0.85);
+  --shadow-sm:         0 1px 3px rgba(0,0,0,0.08);
+  --shadow-md:         0 4px 24px rgba(0,0,0,0.08);
+  --shadow-lg:         0 8px 40px rgba(0,0,0,0.12);
+  /* Transition defaults */
+  --ease-bounce:       cubic-bezier(0.34, 1.56, 0.64, 1);
+  --ease-smooth:       cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.dark {
+  --background:    #0a0f1e;
+  --foreground:    #f1f5f9;
+  --muted:         #94a3b8;
+  --muted-bg:      #111827;
+  --border:        #1e293b;
+  --card-bg:       #111827;
+  --primary:       #3B82F6;
+  --primary-light: #60A5FA;
+  --primary-fill:  #1e3a5f;
+  --navbar-bg:     rgba(10,15,30,0.9);
+  --shadow-sm:     0 1px 3px rgba(0,0,0,0.3);
+  --shadow-md:     0 4px 24px rgba(0,0,0,0.3);
+  --shadow-lg:     0 8px 40px rgba(0,0,0,0.4);
+}
+
+/* ─── Base Styles ────────────────────────────────────────────────────────────── */
+*, *::before, *::after {
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+  /* Prevent layout shift on scrollbar show/hide */
+  scrollbar-gutter: stable;
+}
+
+body {
+  font-family: 'Inter', system-ui, sans-serif;
+  background-color: var(--background);
+  color: var(--foreground);
+  line-height: 1.6;
+  /* Use specific properties — NOT transition-all (it's expensive and slow) */
+  transition: background-color 0.2s ease, color 0.2s ease;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* ─── Custom Scrollbar ───────────────────────────────────────────────────────── */
+::-webkit-scrollbar        { width: 6px; height: 6px; }
+::-webkit-scrollbar-track  { background: var(--muted-bg); }
+::-webkit-scrollbar-thumb  { background: var(--border); border-radius: 3px; transition: background 0.2s; }
+::-webkit-scrollbar-thumb:hover { background: var(--muted); }
+
+/* ─── Selection ──────────────────────────────────────────────────────────────── */
+::selection {
+  background: var(--primary-fill);
+  color: var(--primary);
+}
+
+/* ─── Focus Ring Override (accessible but clean) ─────────────────────────────── */
+:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
+  border-radius: 6px;
+}
+
+/* ─── Component Layer ────────────────────────────────────────────────────────── */
+@layer components {
+
+  /* Buttons */
+  .btn-primary {
+    @apply inline-flex items-center justify-center gap-2 px-6 py-3 bg-primary-700 hover:bg-primary-800
+           text-white font-semibold rounded-xl
+           hover:shadow-lg hover:shadow-primary-500/25 hover:-translate-y-0.5
+           active:translate-y-0 active:shadow-none active:scale-[0.98]
+           focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2
+           disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none disabled:shadow-none;
+    /* Specific transitions only — not transition-all */
+    transition: background-color 150ms ease, transform 150ms ease, box-shadow 150ms ease, opacity 150ms ease;
+    will-change: transform;
+  }
+
+  .btn-secondary {
+    @apply inline-flex items-center justify-center gap-2 px-6 py-3 border-2 border-primary-700
+           text-primary-700 dark:text-primary-400 dark:border-primary-400
+           font-semibold rounded-xl
+           hover:bg-primary-50 dark:hover:bg-primary-950
+           hover:-translate-y-0.5 active:translate-y-0 active:scale-[0.98]
+           focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2
+           disabled:opacity-50 disabled:cursor-not-allowed;
+    transition: background-color 150ms ease, border-color 150ms ease, transform 150ms ease;
+    will-change: transform;
+  }
+
+  .btn-outline {
+    @apply inline-flex items-center justify-center gap-2 px-6 py-3 border border-slate-300 dark:border-slate-700
+           text-slate-700 dark:text-slate-300 font-semibold rounded-xl
+           hover:border-slate-400 dark:hover:border-slate-500
+           hover:bg-slate-50 dark:hover:bg-slate-800
+           hover:-translate-y-0.5 active:translate-y-0 active:scale-[0.98]
+           focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-400 focus-visible:ring-offset-2
+           disabled:opacity-50 disabled:cursor-not-allowed;
+    transition: background-color 150ms ease, border-color 150ms ease, transform 150ms ease;
+    will-change: transform;
+  }
+
+  .btn-ghost {
+    @apply inline-flex items-center justify-center gap-2 px-4 py-2 text-slate-600 dark:text-slate-300
+           font-medium rounded-lg
+           hover:bg-slate-100 dark:hover:bg-slate-800
+           active:scale-[0.97]
+           focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-300;
+    transition: background-color 120ms ease, transform 120ms ease;
+  }
+
+  /* Card */
+  .card {
+    @apply bg-white dark:bg-slate-900 rounded-2xl border border-slate-100
+           dark:border-slate-800 shadow-card;
+    transition: box-shadow 200ms ease, border-color 200ms ease;
+  }
+  .card:hover {
+    @apply shadow-card-hover;
+  }
+
+  /* Input */
+  .input-base {
+    @apply w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700
+           bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100
+           placeholder:text-slate-400 dark:placeholder:text-slate-500
+           focus:outline-none focus:ring-2 focus:ring-primary-500/50 focus:border-primary-500;
+    transition: border-color 150ms ease, box-shadow 150ms ease;
+  }
+
+  /* Typography utilities */
+  .section-title {
+    @apply text-3xl md:text-4xl font-bold text-slate-900 dark:text-white;
+  }
+  .section-subtitle {
+    @apply text-lg text-slate-500 dark:text-slate-400 max-w-2xl;
+  }
+
+  /* Badges */
+  .badge {
+    @apply inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold;
+  }
+  .badge-blue   { @apply badge bg-primary-100 dark:bg-primary-900 text-primary-700 dark:text-primary-300; }
+  .badge-green  { @apply badge bg-emerald-100 dark:bg-emerald-900/50 text-emerald-700 dark:text-emerald-400; }
+  .badge-red    { @apply badge bg-red-100 dark:bg-red-900/50 text-red-700 dark:text-red-400; }
+  .badge-yellow { @apply badge bg-yellow-100 dark:bg-yellow-900/50 text-yellow-700 dark:text-yellow-400; }
+
+  /* Skeleton loader */
+  .skeleton {
+    @apply animate-pulse bg-slate-200 dark:bg-slate-700 rounded-lg;
+  }
+}
+
+/* ─── Utility Layer ───────────────────────────────────────────────────────────── */
+@layer utilities {
+  .text-balance  { text-wrap: balance; }
+
+  .text-gradient {
+    @apply bg-gradient-to-r from-primary-700 to-primary-500 bg-clip-text text-transparent;
+  }
+
+  .bg-mesh {
+    background-image:
+      radial-gradient(at 40% 20%, hsla(214,89%,52%,0.10) 0px, transparent 50%),
+      radial-gradient(at 80% 0%,   hsla(214,89%,40%,0.08) 0px, transparent 50%),
+      radial-gradient(at 0%  50%,  hsla(214,89%,60%,0.06) 0px, transparent 50%);
+  }
+
+  .glass {
+    @apply backdrop-blur-md bg-white/70 dark:bg-slate-900/70 border border-white/20 dark:border-slate-700/50;
+  }
+
+  /* Hardware-accelerated layers for animated elements */
+  .gpu { will-change: transform; transform: translateZ(0); }
+}
+
+/* ─── Keyframe Animations ─────────────────────────────────────────────────────── */
+
+/* Fade in */
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+/* Slide up + fade in — primary entrance animation */
+@keyframes fadeInUp {
+  from { opacity: 0; transform: translateY(20px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* Slide down + fade in — for dropdowns */
+@keyframes fadeInDown {
+  from { opacity: 0; transform: translateY(-12px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* Scale + fade in — for modals and cards */
+@keyframes scaleIn {
+  from { opacity: 0; transform: scale(0.95); }
+  to   { opacity: 1; transform: scale(1); }
+}
+
+/* Slide in from right — for drawers and side panels */
+@keyframes slideInRight {
+  from { opacity: 0; transform: translateX(24px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+
+/* Shake — for error states */
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  20%       { transform: translateX(-8px); }
+  40%       { transform: translateX(8px); }
+  60%       { transform: translateX(-6px); }
+  80%       { transform: translateX(6px); }
+}
+
+/* Pulse glow — for primary CTA highlights */
+@keyframes pulseGlow {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(59,130,246,0.4); }
+  50%       { box-shadow: 0 0 0 12px rgba(59,130,246,0); }
+}
+
+/* Spin — loading spinners */
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to   { transform: rotate(360deg); }
+}
+
+/* Bounce gentle — for notification dots */
+@keyframes bounceSoft {
+  0%, 100% { transform: translateY(0); }
+  50%       { transform: translateY(-4px); }
+}
+
+/* ─── Animation Utility Classes ───────────────────────────────────────────────── */
+.animate-fade-in          { animation: fadeIn        0.25s var(--ease-smooth) both; }
+.animate-fade-in-up       { animation: fadeInUp      0.35s var(--ease-smooth) both; }
+.animate-fade-in-down     { animation: fadeInDown    0.25s var(--ease-smooth) both; }
+.animate-scale-in         { animation: scaleIn       0.25s var(--ease-bounce)  both; }
+.animate-slide-in-right   { animation: slideInRight  0.3s  var(--ease-smooth) both; }
+.animate-shake            { animation: shake         0.45s var(--ease-smooth) both; }
+.animate-pulse-glow       { animation: pulseGlow     2s    ease-in-out infinite; }
+.animate-bounce-soft      { animation: bounceSoft    1.5s  ease-in-out infinite; }
+
+/* Stagger delays for list items */
+.delay-75  { animation-delay: 75ms; }
+.delay-100 { animation-delay: 100ms; }
+.delay-150 { animation-delay: 150ms; }
+.delay-200 { animation-delay: 200ms; }
+.delay-300 { animation-delay: 300ms; }
+
+/* ─── Page Transition ────────────────────────────────────────────────────────── */
+/* Subtle entrance on every page — fast enough to feel instant */
+main {
+  animation: fadeInUp 0.2s ease-out both;
+}
+
+/* ─── Loading Bar Animation ──────────────────────────────────────────────────── */
+@keyframes loadingBar {
+  0%   { width: 0%;   opacity: 1; }
+  70%  { width: 85%;  opacity: 1; }
+  100% { width: 100%; opacity: 0; }
+}
+.animate-loading-bar {
+  animation: loadingBar 1.2s ease-out forwards;
+}
+
+/* ─── Link hover — instant feedback ─────────────────────────────────────────── */
+a {
+  transition: color 100ms ease, opacity 100ms ease;
+}
+
+@layer utilities {
+  .gpu {
+    transform: translateZ(0);
+    backface-visibility: hidden;
+    perspective: 1000px;
+  }
+}
