@@ -74,8 +74,7 @@ function LoginForm() {
         }
       } else if (result?.ok) {
         toast.success("Welcome back!");
-        router.push(callbackUrl);
-        router.refresh();
+        window.location.href = callbackUrl;
       }
     } catch {
       setShake(true);
