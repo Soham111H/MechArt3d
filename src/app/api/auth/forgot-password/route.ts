@@ -57,7 +57,10 @@ export async function POST(req: Request) {
       });
 
       // Build reset URL with raw token
-      const resetUrl = `${process.env.AUTH_URL || process.env.NEXT_PUBLIC_APP_URL}/auth/reset-password?token=${rawToken}&email=${encodeURIComponent(user.email)}`;
+      const host = req.headers.get("x-forwarded-host") || req.headers.get("host");
+      const protocol = req.headers.get("x-forwarded-proto") || "http";
+      const baseUrl = process.env.NEXT_PUBLIC_APP_URL || process.env.AUTH_URL || `${protocol}://${host}`;
+      const resetUrl = `${baseUrl}/auth/reset-password?token=${rawToken}&email=${encodeURIComponent(user.email)}`;
 
       // Send email — wrapped in its own try/catch so SMTP failures don't crash the whole route
       try {

@@ -53,11 +53,13 @@ function LoginForm() {
         redirect: false,
       });
 
-      if (result?.error || result?.code) {
+      console.log("Login Result:", result);
+
+      if (result?.error || result?.code || result?.ok === false) {
         setShake(true);
         setTimeout(() => setShake(false), 500);
 
-        const errCode = result.code || result.error || "";
+        const errCode = result?.code || result?.error || "";
 
         if (errCode === "CredentialsSignin") {
           setError("Incorrect password. Forgot password?");
@@ -72,11 +74,16 @@ function LoginForm() {
         } else {
           setError("Login failed. Please check your credentials.");
         }
-      } else if (result?.ok) {
+      } else {
+        // Assume success if no explicit error and ok isn't explicitly false
         toast.success("Welcome back!");
-        window.location.href = callbackUrl;
+        // Small delay to let the session cookie set fully before hard reload
+        setTimeout(() => {
+          window.location.href = callbackUrl;
+        }, 500);
       }
-    } catch {
+    } catch (e) {
+      console.error("Login Catch Error:", e);
       setShake(true);
       setTimeout(() => setShake(false), 500);
       setError("Something went wrong. Please try again.");
