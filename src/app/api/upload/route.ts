@@ -11,7 +11,7 @@ const USE_CLOUDINARY = true;
 // Allowed file types
 const ALLOWED_IMAGE_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
 const ALLOWED_MODEL_TYPES = ['application/octet-stream', 'model/gltf-binary', 'model/obj'];
-const ALLOWED_EXTENSIONS  = ['.jpg', '.jpeg', '.png', '.webp', '.gif', '.glb', '.obj', '.stl'];
+const ALLOWED_EXTENSIONS  = ['.jpg', '.jpeg', '.png', '.webp', '.gif', '.glb', '.obj', '.stl', '.3mf'];
 
 const MAX_IMAGE_BYTES = 5  * 1024 * 1024;  // 5 MB
 const MAX_MODEL_BYTES = 50 * 1024 * 1024;  // 50 MB
@@ -36,7 +36,7 @@ export async function POST(req: NextRequest) {
     }
 
     const ext          = getExtension(file.name);
-    const is3DModel    = ['.glb', '.obj', '.stl'].includes(ext);
+    const is3DModel    = ['.glb', '.obj', '.stl', '.3mf'].includes(ext);
     const maxBytes     = is3DModel ? MAX_MODEL_BYTES : MAX_IMAGE_BYTES;
     const resourceType = is3DModel ? 'raw' : 'image';
 
