@@ -21,12 +21,9 @@ async function main() {
   await prisma.review.deleteMany({});
   await prisma.product.deleteMany({});
 
-  // 3. Delete categories and materials
-  console.log('🗑️ Deleting Categories & Materials...');
+  // 3. Delete categories
+  console.log('🗑️ Deleting Categories...');
   await prisma.category.deleteMany({});
-  await prisma.material.deleteMany({});
-  await prisma.color.deleteMany({});
-  await prisma.applicationCategory.deleteMany({});
 
   // 4. (Optional) Delete non-admin users
   console.log('🗑️ Deleting dummy customers and staff...');
