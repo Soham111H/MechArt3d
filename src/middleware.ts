@@ -99,7 +99,15 @@ export default async function middleware(req: NextRequest) {
   }
 
   // ── 4. Auth check using getToken (Edge compatible) ─────────────────────
-  const token = await getToken({ req, secret: process.env.AUTH_SECRET });
+  const isSecure = process.env.NODE_ENV === "production" || req.url.startsWith("https://") || req.headers.get("x-forwarded-proto") === "https";
+  const cookieName = isSecure ? "__Secure-authjs.session-token" : "authjs.session-token";
+
+  const token = await getToken({ 
+    req, 
+    secret: process.env.AUTH_SECRET,
+    cookieName,
+    salt: cookieName
+  });
   const session = token ? { user: token } : null;
 
   // Redirect logged-in users away from auth pages
