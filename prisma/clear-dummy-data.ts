@@ -11,13 +11,12 @@ async function main() {
   await prisma.order.deleteMany({});
   
   console.log('🗑️ Deleting Cart Items...');
-  await prisma.cartItem.deleteMany({});
   await prisma.cart.deleteMany({});
 
   // 2. Delete all dummy products and variants
   console.log('🗑️ Deleting Products & Variants...');
   await prisma.productImage.deleteMany({});
-  await prisma.productVariant.deleteMany({});
+  await prisma.variant.deleteMany({});
   await prisma.wishlist.deleteMany({});
   await prisma.review.deleteMany({});
   await prisma.product.deleteMany({});
