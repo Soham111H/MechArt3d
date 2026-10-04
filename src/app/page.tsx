@@ -17,32 +17,7 @@ import { useSettingsStore } from "@/store/useSettingsStore";
 import PopupBanner from "@/components/ui/PopupBanner";
 
 // ─── Initial Fallback Data ────────────
-const initialFeaturedProducts = [
-  {
-    id: "1", name: "Dragon Figurine", slug: "dragon-figurine",
-    price: 1299, originalPrice: 1699, rating: 4.8, reviews: 124,
-    material: "Resin", image: null,
-    badge: "Bestseller",
-  },
-  {
-    id: "2", name: "Mechanical Gear Set", slug: "mechanical-gear-set",
-    price: 849, originalPrice: null, rating: 4.6, reviews: 87,
-    material: "PLA", image: null,
-    badge: "New",
-  },
-  {
-    id: "3", name: "Abstract Art Vase", slug: "abstract-art-vase",
-    price: 2199, originalPrice: 2599, rating: 4.9, reviews: 56,
-    material: "PETG", image: null,
-    badge: "Premium",
-  },
-  {
-    id: "4", name: "Robot Articulated", slug: "robot-articulated",
-    price: 3499, originalPrice: null, rating: 4.7, reviews: 43,
-    material: "Resin", image: null,
-    badge: null,
-  },
-];
+const initialFeaturedProducts: any[] = [];
 
 const features = [
   {
