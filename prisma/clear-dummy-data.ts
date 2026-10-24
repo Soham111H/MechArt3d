@@ -25,6 +25,11 @@ async function main() {
   console.log('🗑️ Deleting Categories...');
   await prisma.category.deleteMany({});
 
+  // 4. Delete Custom Requests & Inquiries
+  console.log('🗑️ Deleting Custom Requests & Inquiries...');
+  await prisma.customRequest.deleteMany({});
+  await prisma.contactMessage.deleteMany({});
+
   // 4. (Optional) Delete non-admin users
   console.log('🗑️ Deleting dummy customers and staff...');
   await prisma.user.deleteMany({

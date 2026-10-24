@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import {
   PenTool, Search, CheckCircle2, XCircle, FileText,
-  Send, Loader2, ArrowRight, Zap, ExternalLink
+  Send, Loader2, ArrowRight, Zap, ExternalLink, Trash2
 } from "lucide-react";
 import toast from "react-hot-toast";
 import dynamic from "next/dynamic";
@@ -57,6 +57,20 @@ export default function AdminCustomRequestsPage() {
       toast.error("Could not update request");
     } finally {
       setUpdating(false);
+    }
+  };
+
+  const deleteRequest = async (id: string, e?: React.MouseEvent) => {
+    if (e) e.stopPropagation();
+    if (!confirm("Are you sure you want to delete this custom request?")) return;
+    try {
+      const res = await fetch(`/api/admin/custom-requests/${id}`, { method: "DELETE" });
+      if (!res.ok) throw new Error();
+      toast.success("Custom request deleted");
+      if (selectedRequest?.id === id) setSelectedRequest(null);
+      fetchRequests();
+    } catch {
+      toast.error("Failed to delete custom request");
     }
   };
 
@@ -164,7 +178,16 @@ export default function AdminCustomRequestsPage() {
               {/* Row 1: title + status */}
               <div className="flex justify-between items-start mb-2 gap-3">
                 <h3 className="font-bold text-slate-900 dark:text-white line-clamp-1 flex-1">{req.title}</h3>
-                {getStatusBadge(req.status)}
+                <div className="flex items-center gap-1.5 shrink-0">
+                  {getStatusBadge(req.status)}
+                  <button
+                    onClick={(e) => deleteRequest(req.id, e)}
+                    className="p-1 text-slate-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-950/40 rounded-lg transition-colors"
+                    title="Delete Request"
+                  >
+                    <Trash2 size={14} />
+                  </button>
+                </div>
               </div>
               {/* Type badge */}
               <div className="mb-2">{getTypeBadge(req.requestType??'CUSTOM')}</div>
@@ -189,7 +212,16 @@ export default function AdminCustomRequestsPage() {
               <div className="p-6 border-b border-slate-100 dark:border-slate-800">
                 <div className="flex justify-between items-start mb-3 gap-3">
                   <h2 className="text-xl font-black text-slate-900 dark:text-white">{selectedRequest.title}</h2>
-                  {getStatusBadge(selectedRequest.status)}
+                  <div className="flex items-center gap-2">
+                    {getStatusBadge(selectedRequest.status)}
+                    <button
+                      onClick={() => deleteRequest(selectedRequest.id)}
+                      className="p-1.5 text-slate-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-950/40 rounded-lg transition-colors"
+                      title="Delete Request"
+                    >
+                      <Trash2 size={16} />
+                    </button>
+                  </div>
                 </div>
                 <div className="mb-4">{getTypeBadge(selectedRequest.requestType??'CUSTOM')}</div>
 

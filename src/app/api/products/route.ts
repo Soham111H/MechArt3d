@@ -1,27 +1,41 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 
+export const dynamic = "force-dynamic";
+
 export async function GET(req: NextRequest) {
   try {
     const { searchParams } = new URL(req.url);
     const search = searchParams.get("search") || "";
-    const categoryId = searchParams.get("category");
+    const categoryParam = searchParams.get("category");
     const material = searchParams.get("material");
     const minPrice = searchParams.get("minPrice");
     const maxPrice = searchParams.get("maxPrice");
     const sort = searchParams.get("sort") || "newest";
 
-    let whereClause: any = {
+    const whereClause: any = {
       isActive: true,
       status: "PUBLISHED",
       deletedAt: null,
-      OR: search ? [
-        { name: { contains: search } },
-        { description: { contains: search } }
-      ] : undefined,
     };
 
-    if (categoryId) whereClause.categoryId = categoryId;
+    if (search) {
+      whereClause.OR = [
+        { name: { contains: search } },
+        { description: { contains: search } },
+      ];
+    }
+
+    if (categoryParam && categoryParam !== "ALL" && categoryParam !== "") {
+      whereClause.category = {
+        OR: [
+          { id: categoryParam },
+          { slug: categoryParam },
+          { name: categoryParam },
+        ],
+      };
+    }
+
     if (material) whereClause.material = material;
     
     if (minPrice || maxPrice) {

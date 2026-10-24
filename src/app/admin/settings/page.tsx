@@ -64,7 +64,22 @@ export default function SettingsPage() {
   useEffect(() => {
     setIsMounted(true);
     setLocal(settings);
+
+    // Fetch fresh database settings
+    fetch("/api/settings", {
+      cache: "no-store",
+      headers: { "Cache-Control": "no-cache" }
+    })
+      .then(res => res.json())
+      .then(data => {
+        if (data && Object.keys(data).length > 0) {
+          setLocal(prev => ({ ...prev, ...data }));
+          setSettings(data);
+        }
+      })
+      .catch(err => console.error("Could not fetch fresh settings:", err));
   }, []);
+
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const target = e.target as HTMLInputElement;

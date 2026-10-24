@@ -13,7 +13,10 @@ export default function SettingsProvider() {
     // Fetch global settings from database on mount
     const fetchSettings = async () => {
       try {
-        const res = await fetch("/api/settings");
+        const res = await fetch("/api/settings", {
+          cache: "no-store",
+          headers: { "Cache-Control": "no-cache" },
+        });
         if (res.ok) {
           const dbSettings = await res.json();
           // Filter out empty db response if the database is completely empty
