@@ -131,7 +131,7 @@ export default function InstantQuotePage(){
   const [submitting,setSubmitting]=useState(false);
   const [submitSuccess,setSubmitSuccess]=useState(false);
   const [uploadingFile,setUploadingFile]=useState(false);
-  const [submitForm,setSubmitForm]=useState({title:'',description:'',color:''});
+  const [submitForm,setSubmitForm]=useState({title:'',description:'',color:'',email:'',name:''});
 
   const currentPart=parts[currentIdx]??null;
   const currentStats=currentPart?getStats(currentPart.geometry,currentPart.units):null;
@@ -294,7 +294,10 @@ export default function InstantQuotePage(){
 
   const handleSubmit=async(e:React.FormEvent)=>{
     e.preventDefault();
-    if(!session){toast.error('Please log in to submit');return;}
+    if(!session && !submitForm.email.trim()){
+      toast.error('Please enter your email or log in to submit your quote request');
+      return;
+    }
     setSubmitting(true);
     try{
       let stlFileUrl='';
@@ -304,6 +307,7 @@ export default function InstantQuotePage(){
         for (const p of parts) {
           const fd = new FormData();
           fd.append('file', p.file);
+          fd.append('folder', 'custom');
           const up = await fetch('/api/upload', { method: 'POST', body: fd });
           if (up.ok) {
             const d = await up.json();
@@ -335,7 +339,9 @@ export default function InstantQuotePage(){
           quantity:qty,
           requestType:'INSTANT_QUOTE',
           stlFileUrl,
-          estimatedPrice:avgEstINR/83, // store as approx USD
+          estimatedPrice:avgEstINR,
+          email: session?.user?.email || submitForm.email.trim() || undefined,
+          name: session?.user?.name || submitForm.name.trim() || undefined,
         })});
       if(!res.ok){const d=await res.json();throw new Error(d.error||'Submit failed');}
       setSubmitSuccess(true);
@@ -601,36 +607,59 @@ export default function InstantQuotePage(){
                   <div style={{ border: '1px solid rgba(0,0,0,0.1)', borderRadius: '16px', padding: '12px', marginTop: '10px' }}>
                     <h3 style={{ fontSize: '14px', fontWeight: 900, marginBottom: '2px'}}>Request Final Quote</h3>
                     <p style={{ fontSize: '11px', marginBottom: '12px' }}>Your file &amp; browser estimate will be sent for confirmation.</p>
-                    {!session ? (
-                      <div style={{ textAlign: 'center', padding: '16px 0' }}>
-                        <p style={{ fontSize: '12px', marginBottom: '10px' }}>Log in to submit a quote request.</p>
-                        <Link href="/auth/login?callbackUrl=/instant-quote" className={styles.qtBtn} style={{ textDecoration: 'none', display: 'inline-block' }}>Log In to Submit</Link>
-                      </div>
-                    ) : (
-                      <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                        <div className={styles.qtField}>
-                          <label style={{ fontSize: '10px', textTransform: 'uppercase'}}>Project Name</label>
-                          <input type="text" value={submitForm.title} onChange={e => setSubmitForm(p => ({ ...p, title: e.target.value }))} placeholder="Auto-filled from file name" />
-                        </div>
-                        <div className={styles.qtField}>
-                          <label style={{ fontSize: '10px', textTransform: 'uppercase'}}>Notes for Team</label>
-                          <textarea rows={2} value={submitForm.description} onChange={e => setSubmitForm(p => ({ ...p, description: e.target.value }))} placeholder="Orientation, surface finish, deadline…" style={{ resize: 'none' }} />
-                        </div>
-                        <div className={styles.qtField}>
-                          <label style={{ fontSize: '10px', textTransform: 'uppercase'}}>Color Preference</label>
-                          <input type="text" value={submitForm.color} onChange={e => setSubmitForm(p => ({ ...p, color: e.target.value }))} placeholder="Any / Matte Black / White" />
-                        </div>
-                        {currentEst && (
-                          <div style={{ padding: '8px 10px', borderRadius: '12px', fontSize: '11px'}}>
-                            <strong>Estimate attached:</strong> {fmtRange(totalEst.lo * qty, totalEst.hi * qty)} · {parts.length} part(s) × qty {qty}
+                    <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                      {!session && (
+                        <>
+                          <div className={styles.qtField}>
+                            <label style={{ fontSize: '10px', textTransform: 'uppercase'}}>Email Address (Required)</label>
+                            <input
+                              type="email"
+                              required
+                              value={submitForm.email}
+                              onChange={e => setSubmitForm(p => ({ ...p, email: e.target.value }))}
+                              placeholder="Where should we send your quote?"
+                            />
                           </div>
+                          <div className={styles.qtField}>
+                            <label style={{ fontSize: '10px', textTransform: 'uppercase'}}>Full Name or Phone</label>
+                            <input
+                              type="text"
+                              value={submitForm.name}
+                              onChange={e => setSubmitForm(p => ({ ...p, name: e.target.value }))}
+                              placeholder="Your Name / Phone number"
+                            />
+                          </div>
+                        </>
+                      )}
+                      <div className={styles.qtField}>
+                        <label style={{ fontSize: '10px', textTransform: 'uppercase'}}>Project Name</label>
+                        <input type="text" value={submitForm.title} onChange={e => setSubmitForm(p => ({ ...p, title: e.target.value }))} placeholder="Auto-filled from file name" />
+                      </div>
+                      <div className={styles.qtField}>
+                        <label style={{ fontSize: '10px', textTransform: 'uppercase'}}>Notes for Team</label>
+                        <textarea rows={2} value={submitForm.description} onChange={e => setSubmitForm(p => ({ ...p, description: e.target.value }))} placeholder="Orientation, surface finish, deadline…" style={{ resize: 'none' }} />
+                      </div>
+                      <div className={styles.qtField}>
+                        <label style={{ fontSize: '10px', textTransform: 'uppercase'}}>Color Preference</label>
+                        <input type="text" value={submitForm.color} onChange={e => setSubmitForm(p => ({ ...p, color: e.target.value }))} placeholder="Any / Matte Black / White" />
+                      </div>
+                      {currentEst && (
+                        <div style={{ padding: '8px 10px', borderRadius: '12px', fontSize: '11px'}}>
+                          <strong>Estimate attached:</strong> {fmtRange(totalEst.lo * qty, totalEst.hi * qty)} · {parts.length} part(s) × qty {qty}
+                        </div>
+                      )}
+                      <button type="submit" disabled={submitting || uploadingFile} className={styles.qtBtn} style={{ width: '100%', marginTop: '4px' }}>
+                        {submitting || uploadingFile ? (uploadingFile ? 'Uploading…' : 'Submitting…') : 'Submit Quote Request'}
+                      </button>
+                      <p style={{ fontSize: '10px', textAlign: 'center', marginTop: '4px' }}>
+                        Files uploaded securely. We confirm pricing within 24 hours.
+                        {!session && (
+                          <span style={{ display: 'block', marginTop: '2px' }}>
+                            Have an account? <Link href="/auth/login?callbackUrl=/instant-quote" style={{ color: 'inherit', textDecoration: 'underline' }}>Log in</Link>
+                          </span>
                         )}
-                        <button type="submit" disabled={submitting || uploadingFile} className={styles.qtBtn} style={{ width: '100%', marginTop: '4px' }}>
-                          {submitting || uploadingFile ? (uploadingFile ? 'Uploading…' : 'Submitting…') : 'Submit Quote Request'}
-                        </button>
-                        <p style={{ fontSize: '10px', textAlign: 'center', marginTop: '4px' }}>File uploaded securely. We confirm pricing within 24 hours.</p>
-                      </form>
-                    )}
+                      </p>
+                    </form>
                   </div>
                 )}
               </div>

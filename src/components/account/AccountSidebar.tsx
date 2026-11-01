@@ -38,10 +38,12 @@ export default function AccountSidebar({ user }: { user: { name?: string | null;
               {user.name}
             </h3>
             <p className="text-sm text-slate-500 font-medium truncate w-full px-2">{user.email}</p>
-            <div className="mt-4 inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-700 text-xs font-bold uppercase tracking-wider">
-              <Shield size={12} className="text-primary-500" />
-              {user.role === "SUPER_ADMIN" ? "Super Admin" : user.role === "STAFF" ? "Staff" : "Member"}
-            </div>
+            {user.role && user.role !== "USER" && (
+              <div className="mt-4 inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-700 text-xs font-bold uppercase tracking-wider">
+                <Shield size={12} className="text-primary-500" />
+                {user.role === "SUPER_ADMIN" ? "Super Admin" : user.role === "ADMIN" ? "Admin" : "Staff"}
+              </div>
+            )}
           </div>
         </div>
 

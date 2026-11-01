@@ -27,6 +27,7 @@ const checkoutSchema = z.object({
   }),
   paymentMethod: z.string().default("COD"),
   notes: z.string().optional(),
+  couponCode: z.string().optional(),
 });
 
 export async function POST(req: NextRequest) {
@@ -83,10 +84,57 @@ export async function POST(req: NextRequest) {
 
     const taxAmount = subtotal * 0.18; // 18% GST
     const shippingAmount = data.paymentMethod === 'COD' ? 50 : 0; // ₹50 for COD
-    const totalAmount = subtotal + taxAmount + shippingAmount;
 
-    // 2. Create Order in Transaction
+    // 2. Validate and Calculate Coupon Discount
+    let discountAmount = 0;
+    let appliedCouponCode: string | null = null;
+    let couponToUpdateId: string | null = null;
+
+    if (data.couponCode) {
+      const codeUpper = data.couponCode.trim().toUpperCase();
+      const coupon = await prisma.coupon.findUnique({ where: { code: codeUpper } });
+      if (coupon && coupon.isActive) {
+        const notExpired = !coupon.expiresAt || new Date() <= coupon.expiresAt;
+        const meetsMinOrder = !coupon.minOrder || subtotal >= Number(coupon.minOrder);
+        const withinMaxUses = !coupon.maxUses || coupon.usesCount < coupon.maxUses;
+
+        let userAllowed = true;
+        if (userId && coupon.maxUsesPerUser) {
+          const userOrders = await prisma.order.count({
+            where: { userId, couponCode: codeUpper },
+          });
+          if (userOrders >= coupon.maxUsesPerUser) {
+            userAllowed = false;
+          }
+        }
+
+        if (notExpired && meetsMinOrder && withinMaxUses && userAllowed) {
+          if (coupon.type === 'PERCENTAGE') {
+            discountAmount = (subtotal * Number(coupon.value)) / 100;
+            if (coupon.maxDiscount) {
+              discountAmount = Math.min(discountAmount, Number(coupon.maxDiscount));
+            }
+          } else {
+            discountAmount = Math.min(Number(coupon.value), subtotal);
+          }
+          discountAmount = Math.round(discountAmount * 100) / 100;
+          appliedCouponCode = coupon.code;
+          couponToUpdateId = coupon.id;
+        }
+      }
+    }
+
+    const totalAmount = Math.max(0, subtotal + taxAmount + shippingAmount - discountAmount);
+
+    // 3. Create Order in Transaction
     const order = await prisma.$transaction(async (tx) => {
+      // Increment coupon uses count if applied
+      if (couponToUpdateId) {
+        await tx.coupon.update({
+          where: { id: couponToUpdateId },
+          data: { usesCount: { increment: 1 } },
+        });
+      }
       
       // Create shipping address record
       const address = await tx.address.create({
@@ -112,7 +160,9 @@ export async function POST(req: NextRequest) {
           subtotal: subtotal,
           tax: taxAmount,
           shipping: shippingAmount,
+          discount: discountAmount,
           total: totalAmount,
+          couponCode: appliedCouponCode,
           addressId: address.id,
           notes: data.notes,
         }

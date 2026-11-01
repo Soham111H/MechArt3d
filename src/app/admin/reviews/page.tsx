@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Star, CheckCircle, XCircle } from "lucide-react";
+import { Star, CheckCircle, XCircle, Trash2 } from "lucide-react";
 import toast from "react-hot-toast";
 import Link from "next/link";
 
@@ -39,6 +39,18 @@ export default function ReviewsPage() {
       fetchReviews();
     } catch (error) {
       toast.error("Failed to update review");
+    }
+  };
+
+  const handleDelete = async (id: string) => {
+    if (!confirm("Are you sure you want to permanently delete this review?")) return;
+    try {
+      const res = await fetch(`/api/admin/reviews?id=${id}`, { method: "DELETE" });
+      if (!res.ok) throw new Error("Failed to delete review");
+      toast.success("Review deleted");
+      fetchReviews();
+    } catch (error) {
+      toast.error("Failed to delete review");
     }
   };
 
@@ -138,11 +150,18 @@ export default function ReviewsPage() {
                 {review.status !== 'REJECTED' ? (
                   <button 
                     onClick={() => handleModerate(review.id, false)}
-                    className="flex-1 flex items-center justify-center gap-1 py-2 bg-red-50 text-red-600 hover:bg-red-100 dark:bg-red-500/10 dark:hover:bg-red-500/20 rounded-xl text-sm font-bold transition-colors"
+                    className="flex-1 flex items-center justify-center gap-1 py-2 bg-yellow-50 text-yellow-700 hover:bg-yellow-100 dark:bg-yellow-500/10 dark:hover:bg-yellow-500/20 rounded-xl text-sm font-bold transition-colors"
                   >
                     <XCircle size={16} /> Reject
                   </button>
                 ) : null}
+                <button
+                  onClick={() => handleDelete(review.id)}
+                  className="p-2 text-slate-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-950/30 rounded-xl transition-colors"
+                  title="Delete Review"
+                >
+                  <Trash2 size={16} />
+                </button>
               </div>
             </div>
           ))}

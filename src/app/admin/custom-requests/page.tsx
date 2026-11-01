@@ -10,6 +10,12 @@ import dynamic from "next/dynamic";
 
 const ModelViewer = dynamic(() => import("@/components/3d/ModelViewer"), { ssr: false, loading: () => <div className="h-full w-full flex items-center justify-center bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl"><span className="text-slate-400 text-sm">Loading 3D...</span></div> });
 
+const getEstInr = (val: any) => {
+  const num = Number(val);
+  if (!num) return 0;
+  return num > 100 ? Math.round(num) : Math.round(num * 83);
+};
+
 export default function AdminCustomRequestsPage() {
   const [requests, setRequests]           = useState<any[]>([]);
   const [loading, setLoading]             = useState(true);
@@ -196,7 +202,7 @@ export default function AdminCustomRequestsPage() {
               <div className="flex justify-between items-center text-xs text-slate-400 pt-3 border-t border-slate-100 dark:border-slate-800">
                 <span>By: {req.user?.name??'Unknown'}</span>
                 <div className="flex items-center gap-3">
-                  {req.estimatedPrice&&<span className="text-blue-600 dark:text-blue-400 font-bold">Est: ₹{Math.round(Number(req.estimatedPrice)*83).toLocaleString('en-IN')}</span>}
+                  {req.estimatedPrice&&<span className="text-blue-600 dark:text-blue-400 font-bold">Est: ₹{getEstInr(req.estimatedPrice).toLocaleString('en-IN')}</span>}
                   <span>{new Date(req.createdAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })}</span>
                 </div>
               </div>
@@ -243,7 +249,7 @@ export default function AdminCustomRequestsPage() {
                       <p className="text-xs font-black uppercase tracking-widest text-blue-600 dark:text-blue-400 mb-2">⚡ Instant Quote Details</p>
                       {selectedRequest.estimatedPrice&&(
                         <div className="flex justify-between"><span className="font-bold text-slate-900 dark:text-white">Browser Estimate:</span>
-                          <span className="text-blue-700 dark:text-blue-400 font-black">₹{Math.round(Number(selectedRequest.estimatedPrice)*83).toLocaleString('en-IN')}</span>
+                          <span className="text-blue-700 dark:text-blue-400 font-black">₹{getEstInr(selectedRequest.estimatedPrice).toLocaleString('en-IN')}</span>
                         </div>
                       )}
                       {selectedRequest.stlFileUrl&&(
@@ -294,7 +300,7 @@ export default function AdminCustomRequestsPage() {
                     </label>
                     {selectedRequest.requestType==='INSTANT_QUOTE'&&selectedRequest.estimatedPrice&&(
                       <p className="text-[10px] text-blue-600 dark:text-blue-400 mb-1">
-                        Browser estimate: ₹{Math.round(Number(selectedRequest.estimatedPrice)*83).toLocaleString('en-IN')} — adjust if needed
+                        Browser estimate: ₹{getEstInr(selectedRequest.estimatedPrice).toLocaleString('en-IN')} — adjust if needed
                       </p>
                     )}
                     <input type="number" value={quotePrice} onChange={e=>setQuotePrice(e.target.value)}

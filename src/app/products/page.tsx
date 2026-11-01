@@ -4,7 +4,7 @@ import { useState, useEffect, Suspense } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import {
-  Package, Search, Filter, Box, PenTool, Zap, ArrowRight, X, Layers
+  Package, Search, Filter, Box, PenTool, Zap, ArrowRight, X, Layers, Star
 } from "lucide-react";
 import toast from "react-hot-toast";
 import WishlistButton from "@/components/ui/WishlistButton";
@@ -22,7 +22,6 @@ function ProductsCatalogContent() {
   // Filters
   const [search, setSearch] = useState("");
   const [sort, setSort] = useState("newest");
-  const [material, setMaterial] = useState("");
   const [selectedCategory, setSelectedCategory] = useState<string>(
     searchParams.get("category") || ""
   );
@@ -52,7 +51,7 @@ function ProductsCatalogContent() {
       fetchProducts();
     }, 250);
     return () => clearTimeout(timer);
-  }, [search, sort, material, selectedCategory]);
+  }, [search, sort, selectedCategory]);
 
   const fetchProducts = async () => {
     setLoading(true);
@@ -60,7 +59,6 @@ function ProductsCatalogContent() {
       const params = new URLSearchParams();
       if (search) params.append("search", search);
       if (sort) params.append("sort", sort);
-      if (material) params.append("material", material);
       if (selectedCategory) params.append("category", selectedCategory);
 
       const res = await fetch(`/api/products?${params.toString()}`);
@@ -88,7 +86,6 @@ function ProductsCatalogContent() {
 
   const handleClearFilters = () => {
     setSearch("");
-    setMaterial("");
     setSort("newest");
     handleSelectCategory("");
   };
@@ -369,44 +366,8 @@ function ProductsCatalogContent() {
               </select>
             </div>
 
-            {/* Materials */}
-            <div className="space-y-3">
-              <h3 className="text-sm font-black text-slate-900 dark:text-white uppercase tracking-wider">
-                Material
-              </h3>
-              <div className="space-y-2">
-                {["", "PLA", "Resin", "PETG", "Carbon Fiber"].map((mat) => (
-                  <label
-                    key={mat}
-                    className="flex items-center gap-3 cursor-pointer group"
-                  >
-                    <div
-                      className={`w-5 h-5 rounded flex items-center justify-center border transition-colors ${
-                        material === mat
-                          ? "bg-primary-500 border-primary-500"
-                          : "bg-white dark:bg-slate-900 border-slate-300 dark:border-slate-700 group-hover:border-primary-400"
-                      }`}
-                    >
-                      {material === mat && (
-                        <div className="w-2 h-2 bg-white rounded-sm" />
-                      )}
-                    </div>
-                    <span
-                      className={`text-sm font-medium transition-colors ${
-                        material === mat
-                          ? "text-slate-900 dark:text-white font-bold"
-                          : "text-slate-600 dark:text-slate-400 group-hover:text-slate-900 dark:group-hover:text-white"
-                      }`}
-                    >
-                      {mat || "All Materials"}
-                    </span>
-                  </label>
-                ))}
-              </div>
-            </div>
-
             {/* Active Filters Summary / Reset */}
-            {(selectedCategory || material || search) && (
+            {(selectedCategory || search) && (
               <div className="pt-2">
                 <button
                   type="button"
@@ -422,7 +383,7 @@ function ProductsCatalogContent() {
           {/* Product Grid */}
           <main className="flex-1">
             {/* Active filter tags */}
-            {(selectedCategory || material || search) && (
+            {(selectedCategory || search) && (
               <div className="mb-4 flex flex-wrap items-center gap-2">
                 <span className="text-xs text-slate-400 font-bold uppercase tracking-wider">
                   Active Filters:
@@ -432,17 +393,6 @@ function ProductsCatalogContent() {
                     Category: {activeCategoryObj?.name || selectedCategory}
                     <button
                       onClick={() => handleSelectCategory("")}
-                      className="hover:text-red-500 ml-1"
-                    >
-                      <X size={12} />
-                    </button>
-                  </span>
-                )}
-                {material && (
-                  <span className="inline-flex items-center gap-1 px-2.5 py-1 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 rounded-lg text-xs font-bold border border-slate-200 dark:border-slate-700">
-                    Material: {material}
-                    <button
-                      onClick={() => setMaterial("")}
                       className="hover:text-red-500 ml-1"
                     >
                       <X size={12} />
@@ -581,6 +531,28 @@ function ProductsCatalogContent() {
                           <h3 className="font-bold text-lg text-slate-900 dark:text-white leading-tight mb-2 group-hover:text-primary-600 transition-colors">
                             {product.name}
                           </h3>
+
+                          {/* Dynamic Rating with admin control */}
+                          <div className="flex items-center gap-1.5 mb-3">
+                            <div className="flex items-center text-amber-400">
+                              {Array.from({ length: 5 }).map((_, idx) => (
+                                <Star
+                                  key={idx}
+                                  size={13}
+                                  className={
+                                    idx < Math.round(product.averageRating || 0)
+                                      ? "fill-amber-400 text-amber-400"
+                                      : "text-slate-200 dark:text-slate-700"
+                                  }
+                                />
+                              ))}
+                            </div>
+                            <span className="text-[11px] font-semibold text-slate-500">
+                              {product.totalReviews > 0
+                                ? `${product.averageRating} (${product.totalReviews})`
+                                : "No reviews yet"}
+                            </span>
+                          </div>
 
                           <div className="mt-auto pt-4 flex items-center justify-between">
                             <div>

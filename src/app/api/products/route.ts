@@ -57,6 +57,10 @@ export async function GET(req: NextRequest) {
           where: { isPrimary: true },
           take: 1
         },
+        reviews: {
+          where: { status: "APPROVED" },
+          select: { rating: true }
+        },
         flashSales: {
           where: { 
             isActive: true,
@@ -69,7 +73,21 @@ export async function GET(req: NextRequest) {
       orderBy,
     });
 
-    return NextResponse.json(products);
+    const formatted = products.map((p) => {
+      const revs = p.reviews || [];
+      const totalReviews = revs.length;
+      const averageRating = totalReviews > 0
+        ? Math.round((revs.reduce((sum, r) => sum + r.rating, 0) / totalReviews) * 10) / 10
+        : 0;
+
+      return {
+        ...p,
+        averageRating,
+        totalReviews,
+      };
+    });
+
+    return NextResponse.json(formatted);
   } catch (error) {
     console.error("GET Public Products Error:", error);
     return NextResponse.json({ error: "Failed to fetch products" }, { status: 500 });

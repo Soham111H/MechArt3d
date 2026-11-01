@@ -119,6 +119,13 @@ export async function PATCH(
   }
 }
 
+export async function PUT(
+  req: NextRequest,
+  context: { params: { id: string } }
+) {
+  return PATCH(req, context);
+}
+
 export async function DELETE(
   req: NextRequest,
   { params }: { params: { id: string } }

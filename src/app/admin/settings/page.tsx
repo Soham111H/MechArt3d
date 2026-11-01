@@ -495,15 +495,8 @@ export default function SettingsPage() {
             <div className="space-y-5">
               <div className="card bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-6 shadow-sm space-y-4">
                 <h2 className="text-lg font-bold flex items-center gap-2 border-b border-slate-100 dark:border-slate-800 pb-3">
-                  <Shield size={18} className="text-red-500" /> System Controls
+                  <Shield size={18} className="text-primary-500" /> User & Notification Controls
                 </h2>
-                <Toggle
-                  name="maintenanceMode"
-                  checked={local.maintenanceMode}
-                  onChange={handleChange}
-                  label="Maintenance Mode"
-                  desc="Show a maintenance page to all non-admin users. Admin login still works."
-                />
                 <Toggle
                   name="allowRegistrations"
                   checked={local.allowRegistrations}

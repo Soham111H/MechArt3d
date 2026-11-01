@@ -90,3 +90,25 @@ export async function PATCH(req: NextRequest) {
     return NextResponse.json({ error: "Failed to update review" }, { status: 500 });
   }
 }
+
+export async function DELETE(req: NextRequest) {
+  try {
+    const session = await auth();
+    if (!session || !["SUPER_ADMIN", "STAFF", "ADMIN"].includes(session.user.role)) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 403 });
+    }
+
+    const { searchParams } = new URL(req.url);
+    const id = searchParams.get("id");
+    if (!id) return NextResponse.json({ error: "Review ID required" }, { status: 400 });
+
+    await prisma.review.delete({
+      where: { id },
+    });
+
+    return NextResponse.json({ success: true, message: "Review deleted successfully" });
+  } catch (error) {
+    console.error("[Admin Reviews DELETE]", error);
+    return NextResponse.json({ error: "Failed to delete review" }, { status: 500 });
+  }
+}

@@ -121,20 +121,23 @@ export default async function AboutPage() {
             Meet the Founder
           </p>
           <div className="flex flex-col sm:flex-row items-center sm:items-start gap-10">
-            {/* Placeholder avatar */}
+            {/* Founder Avatar */}
             <div className="shrink-0">
-              <div className="w-32 h-32 sm:w-40 sm:h-40 bg-gradient-to-br from-primary-500 to-primary-800 rounded-3xl flex items-center justify-center text-white text-5xl font-black shadow-xl">
-                M
+              <div className="w-32 h-32 sm:w-40 sm:h-40 bg-gradient-to-br from-primary-600 to-primary-900 rounded-3xl flex items-center justify-center text-white text-4xl sm:text-5xl font-black shadow-xl ring-4 ring-primary-500/20">
+                AK
               </div>
             </div>
             <div>
-              <h2 className="text-2xl font-black text-slate-900 dark:text-white">Founder</h2>
-              <p className="text-primary-700 dark:text-primary-400 font-semibold mb-6">Founder & Lead Engineer, MechArt 3D</p>
-              <blockquote className="border-l-4 border-primary-500 pl-5">
-                <p className="text-slate-600 dark:text-slate-400 text-lg leading-relaxed italic">
+              <h2 className="text-3xl font-black text-slate-900 dark:text-white">Akhil Katakpara</h2>
+              <p className="text-primary-700 dark:text-primary-400 font-bold mb-4">Founder & Lead Engineer, MechArt 3D</p>
+              <blockquote className="border-l-4 border-primary-500 pl-5 mb-4">
+                <p className="text-slate-600 dark:text-slate-300 text-lg leading-relaxed italic">
                   "Every product starts as a thought. Our job is to give that thought its first breath as a physical object — with accuracy, with care, and with the kind of craftsmanship that makes engineers proud."
                 </p>
               </blockquote>
+              <p className="text-sm text-slate-500 dark:text-slate-400 leading-relaxed">
+                Driven by a deep passion for mechanical innovation, 3D printing architectures, and industrial design, Akhil founded MechArt 3D to bridge the gap between imagination and rapid physical execution for innovators across India.
+              </p>
             </div>
           </div>
         </div>

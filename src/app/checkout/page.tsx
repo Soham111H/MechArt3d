@@ -360,14 +360,14 @@ export default function CheckoutPage() {
                 <div className="w-10 h-10 rounded-full bg-amber-50 dark:bg-amber-900/30 flex items-center justify-center text-amber-600 dark:text-amber-400">
                   <Tag size={20} />
                 </div>
-                <h2 className="text-xl font-bold text-slate-900 dark:text-white">Promo Code</h2>
+                <h2 className="text-xl font-bold text-slate-900 dark:text-white">Discount Coupon / Redeem Code</h2>
               </div>
               <div className="flex gap-3">
                 <input
                   type="text"
                   value={couponCode}
                   onChange={e => { setCouponCode(e.target.value.toUpperCase()); setCouponOk(null); setCouponMsg(''); }}
-                  placeholder="Enter coupon code"
+                  placeholder="Enter coupon or redeem code"
                   disabled={!!appliedCoupon}
                   className="flex-1 px-4 py-3 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl focus:ring-2 focus:ring-primary-500 outline-none font-mono uppercase text-sm disabled:opacity-60"
                 />
