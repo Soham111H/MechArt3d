@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
-import { ShoppingCart, Box, Check, Star } from "lucide-react";
+import { ShoppingCart, Box, Check, Star, FileCode, Download, X, Send, Loader2 } from "lucide-react";
 import toast from "react-hot-toast";
 import Script from "next/script";
 import { useCartStore } from "@/store/useCartStore";
@@ -37,6 +37,14 @@ export default function ProductDetailsPage() {
   const [reviewTitle, setReviewTitle] = useState("");
   const [reviewBody, setReviewBody] = useState("");
   const [submittingReview, setSubmittingReview] = useState(false);
+
+  // Digital file purchase request
+  const [showDigitalModal, setShowDigitalModal] = useState(false);
+  const [digitalEmail, setDigitalEmail] = useState("");
+  const [digitalName, setDigitalName] = useState("");
+  const [digitalFormat, setDigitalFormat] = useState("STL");
+  const [digitalNotes, setDigitalNotes] = useState("");
+  const [submittingDigital, setSubmittingDigital] = useState(false);
 
   useEffect(() => {
     const fetchProduct = async () => {
@@ -145,6 +153,35 @@ export default function ProductDetailsPage() {
   const discountPrice = originalPrice !== null ? basePrice : null;
   const variantModifier = selectedVariant ? parseFloat(selectedVariant.priceModifier) : 0;
   const finalPrice = basePrice + variantModifier;
+
+  const handleDigitalRequest = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!digitalEmail) return toast.error("Please enter your email");
+    setSubmittingDigital(true);
+    try {
+      const res = await fetch("/api/custom-requests", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          title: `Digital 3D File: ${product.name}`,
+          description: `Requesting original 3D CAD/STL digital file for "${product.name}" (Slug: ${product.slug}).\nFormat: ${digitalFormat}\nUser Notes: ${digitalNotes || 'None'}`,
+          requestType: "DIGITAL_FILE",
+          email: digitalEmail,
+          name: digitalName,
+          quantity: 1,
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Failed to submit request");
+      toast.success("✅ Digital file request submitted! We will email you a quote shortly.");
+      setShowDigitalModal(false);
+      setDigitalNotes("");
+    } catch (err: any) {
+      toast.error(err.message || "Failed to submit request");
+    } finally {
+      setSubmittingDigital(false);
+    }
+  };
 
   return (
     <>
@@ -302,6 +339,25 @@ export default function ProductDetailsPage() {
                     className="w-14 h-14"
                   />
                 </div>
+
+                {/* Digital 3D CAD/STL File Purchase Request */}
+                <div className="p-4 bg-gradient-to-br from-blue-50 to-indigo-50/70 dark:from-slate-900 dark:to-blue-950/30 border border-blue-200 dark:border-blue-900/40 rounded-2xl flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <FileCode size={18} className="text-primary-600 dark:text-primary-400" />
+                      <p className="font-bold text-sm text-slate-900 dark:text-white">Need the 3D Print File (.STL / .CAD)?</p>
+                    </div>
+                    <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 leading-relaxed">
+                      Request the original digital model file for your 3D printer. We will quote a price, and upon payment, email the file directly to you.
+                    </p>
+                  </div>
+                  <button
+                    onClick={() => setShowDigitalModal(true)}
+                    className="px-4 py-2.5 bg-white dark:bg-slate-800 border border-blue-300 dark:border-blue-700/60 hover:bg-primary-600 hover:text-white dark:hover:bg-primary-600 text-primary-700 dark:text-primary-300 font-bold text-xs rounded-xl shadow-sm transition-all whitespace-nowrap flex items-center gap-1.5 shrink-0"
+                  >
+                    <Download size={14} /> Request Digital File
+                  </button>
+                </div>
               </div>
 
               {/* Features List */}
@@ -422,6 +478,120 @@ export default function ProductDetailsPage() {
 
         </div>
       </div>
+
+      {/* Digital File Request Modal */}
+      {showDigitalModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fade-in">
+          <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl max-w-lg w-full overflow-hidden shadow-2xl animate-scale-up">
+            <div className="p-5 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <FileCode className="text-primary-600 dark:text-primary-400" size={20} />
+                <h3 className="font-black text-lg text-slate-900 dark:text-white">
+                  Request Digital 3D File
+                </h3>
+              </div>
+              <button
+                onClick={() => setShowDigitalModal(false)}
+                className="p-1.5 rounded-lg text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800"
+              >
+                <X size={18} />
+              </button>
+            </div>
+
+            <form onSubmit={handleDigitalRequest} className="p-6 space-y-4">
+              <div className="flex items-center gap-3 p-3 bg-slate-50 dark:bg-slate-950 rounded-xl border border-slate-200 dark:border-slate-800">
+                {activeImage ? (
+                  <img src={activeImage} alt={product.name} className="w-12 h-12 rounded-lg object-cover bg-white" />
+                ) : (
+                  <Box size={24} className="text-slate-400" />
+                )}
+                <div className="flex-1 min-w-0">
+                  <p className="font-bold text-sm text-slate-900 dark:text-white truncate">{product.name}</p>
+                  <p className="text-xs text-slate-500">Original 3D Printing Digital Model</p>
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300 mb-1">
+                  Your Email Address *
+                </label>
+                <input
+                  type="email"
+                  required
+                  value={digitalEmail}
+                  onChange={e => setDigitalEmail(e.target.value)}
+                  placeholder="name@example.com"
+                  className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl text-sm focus:ring-2 focus:ring-primary-500 outline-none"
+                />
+                <p className="text-[11px] text-slate-400 mt-1">We will send your quote &amp; download link to this email.</p>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300 mb-1">
+                    Your Name (Optional)
+                  </label>
+                  <input
+                    type="text"
+                    value={digitalName}
+                    onChange={e => setDigitalName(e.target.value)}
+                    placeholder="John Doe"
+                    className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl text-sm focus:ring-2 focus:ring-primary-500 outline-none"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300 mb-1">
+                    File Format
+                  </label>
+                  <select
+                    value={digitalFormat}
+                    onChange={e => setDigitalFormat(e.target.value)}
+                    className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl text-sm focus:ring-2 focus:ring-primary-500 outline-none"
+                  >
+                    <option value="STL">STL (.stl - 3D Printing)</option>
+                    <option value="OBJ">OBJ (.obj - Mesh + Textures)</option>
+                    <option value="STEP">STEP (.step - CAD Solid)</option>
+                    <option value="3MF">3MF (.3mf - Multi-color)</option>
+                    <option value="ALL">All Available Formats (ZIP)</option>
+                  </select>
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300 mb-1">
+                  Special Notes or Requirements (Optional)
+                </label>
+                <textarea
+                  value={digitalNotes}
+                  onChange={e => setDigitalNotes(e.target.value)}
+                  rows={3}
+                  placeholder="e.g. Intended 3D printer model, custom scale (e.g. 150%), or commercial licensing inquiries..."
+                  className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl text-sm focus:ring-2 focus:ring-primary-500 outline-none resize-none"
+                />
+              </div>
+
+              <div className="pt-2 flex items-center justify-end gap-3">
+                <button
+                  type="button"
+                  onClick={() => setShowDigitalModal(false)}
+                  className="px-4 py-2.5 text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl font-bold text-sm transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={submittingDigital}
+                  className="btn-primary px-6 py-2.5 flex items-center gap-2 text-sm"
+                >
+                  {submittingDigital ? <Loader2 size={16} className="animate-spin" /> : <Send size={16} />}
+                  Submit Request
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </>
   );
 }

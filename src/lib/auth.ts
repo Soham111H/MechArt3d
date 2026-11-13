@@ -8,23 +8,49 @@ import crypto from "crypto";
 import { prisma } from "@/lib/prisma";
 
 const isGoogleConfigured =
-  !!process.env.GOOGLE_CLIENT_ID &&
-  !process.env.GOOGLE_CLIENT_ID.includes("placeholder") &&
-  !!process.env.GOOGLE_CLIENT_SECRET &&
-  !process.env.GOOGLE_CLIENT_SECRET.includes("placeholder");
+  !!(process.env.GOOGLE_CLIENT_ID || process.env.AUTH_GOOGLE_ID) &&
+  !(process.env.GOOGLE_CLIENT_ID || process.env.AUTH_GOOGLE_ID)?.includes("placeholder") &&
+  !!(process.env.GOOGLE_CLIENT_SECRET || process.env.AUTH_GOOGLE_SECRET) &&
+  !(process.env.GOOGLE_CLIENT_SECRET || process.env.AUTH_GOOGLE_SECRET)?.includes("placeholder");
 
-const AUTH_SECRET = process.env.AUTH_SECRET;
+const AUTH_SECRET = process.env.AUTH_SECRET || process.env.NEXTAUTH_SECRET;
 
-if (process.env.NODE_ENV === 'production' && typeof window === 'undefined') {
-  if (!AUTH_SECRET || AUTH_SECRET.length < 32) {
-    throw new Error('AUTH_SECRET is required and must be at least 32 characters long. Please generate one using `openssl rand -hex 32`');
-  }
+function CustomPrismaAdapter(p: typeof prisma) {
+  const base = PrismaAdapter(p);
+  return {
+    ...base,
+    createUser: async (data: any) => {
+      const { image, avatar, ...rest } = data;
+      const img = image || avatar || null;
+      return p.user.create({
+        data: {
+          ...rest,
+          image: img,
+          avatar: img,
+        },
+      });
+    },
+    updateUser: async ({ id, ...data }: any) => {
+      const { image, avatar, ...rest } = data;
+      const updateData: any = { ...rest };
+      if (image !== undefined || avatar !== undefined) {
+        const img = image || avatar || null;
+        updateData.image = img;
+        updateData.avatar = img;
+      }
+      return p.user.update({
+        where: { id },
+        data: updateData,
+      });
+    },
+  };
 }
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
-  adapter: PrismaAdapter(prisma),
+  adapter: CustomPrismaAdapter(prisma),
   session: { strategy: "jwt" },
-  secret: process.env.AUTH_SECRET,
+  secret: AUTH_SECRET,
+  trustHost: true,
 
   pages: {
     signIn: "/auth/login",
@@ -36,8 +62,8 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
     ...(isGoogleConfigured
       ? [
           Google({
-            clientId:     process.env.GOOGLE_CLIENT_ID!,
-            clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
+            clientId:     (process.env.GOOGLE_CLIENT_ID || process.env.AUTH_GOOGLE_ID)!,
+            clientSecret: (process.env.GOOGLE_CLIENT_SECRET || process.env.AUTH_GOOGLE_SECRET)!,
             authorization: {
               params: {
                 prompt:        "select_account",
@@ -145,8 +171,9 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       if (account?.provider !== "google") return true;
 
       try {
+        if (!user?.email) return false;
         const existingUser = await prisma.user.findUnique({
-          where:   { email: user.email! },
+          where:   { email: user.email },
           include: { accounts: { where: { provider: "google" } } },
         });
 

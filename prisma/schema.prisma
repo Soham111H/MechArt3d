@@ -55,6 +55,7 @@ enum CustomRequestStatus {
 enum CustomRequestType {
   CUSTOM
   INSTANT_QUOTE
+  DIGITAL_FILE
 }
 
 enum BlogStatus {
@@ -79,6 +80,7 @@ model User {
   passwordHash  String?   @db.VarChar(255)
   role          Role      @default(USER)
   avatar        String?   @db.VarChar(500)
+  image         String?   @db.VarChar(500)
   phone         String?   @db.VarChar(20)
   deletedAt     DateTime?
   createdAt     DateTime  @default(now())

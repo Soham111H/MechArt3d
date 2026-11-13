@@ -15,7 +15,7 @@ export async function POST(req: NextRequest) {
   }
 
   try {
-    await sendEmail({
+    const result = await sendEmail({
       to,
       subject: '✅ MechArt 3D — SMTP Test Successful',
       html: `
@@ -30,6 +30,14 @@ export async function POST(req: NextRequest) {
           </div>
         </div>`,
     });
+
+    if (!result.success) {
+      return NextResponse.json(
+        { error: result.error || 'Failed to send test email. Please check your SMTP configuration.' },
+        { status: 400 }
+      );
+    }
+
     return NextResponse.json({ success: true, message: 'Test email sent successfully!' });
   } catch (err: any) {
     return NextResponse.json(

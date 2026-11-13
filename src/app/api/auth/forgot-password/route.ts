@@ -62,23 +62,21 @@ export async function POST(req: Request) {
       const baseUrl = process.env.NEXT_PUBLIC_APP_URL || process.env.AUTH_URL || `${protocol}://${host}`;
       const resetUrl = `${baseUrl}/auth/reset-password?token=${rawToken}&email=${encodeURIComponent(user.email)}`;
 
-      // Send email — wrapped in its own try/catch so SMTP failures don't crash the whole route
+      // Send email
       try {
         const template = passwordResetTemplate(user.name || "", resetUrl);
-        await sendEmail({
+        const sendRes = await sendEmail({
           to:      user.email,
           subject: template.subject,
           html:    template.html,
           text:    template.text,
         });
+        if (!sendRes.success) {
+          console.warn("[forgot-password] Email sending warning:", sendRes.error);
+        }
       } catch (emailError) {
         // Log the error but DON'T throw — the token was saved so the link still works
         console.error("[forgot-password] Email sending failed:", emailError);
-        // In dev: print the reset link so you can test without email configured
-        if (process.env.NODE_ENV === "development") {
-          console.log("\n🔗 [DEV] Password Reset URL (email not sent):");
-          console.log(`   ${resetUrl}\n`);
-        }
       }
     }
 

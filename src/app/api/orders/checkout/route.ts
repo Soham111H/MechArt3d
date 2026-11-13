@@ -218,14 +218,14 @@ export async function POST(req: NextRequest) {
       return newOrder;
     });
 
-    // Enqueue order confirmation email (fire-and-forget)
+    // Send order confirmation email
     try {
       const userRecord = await prisma.user.findUnique({
         where: { id: userId! },
         select: { email: true, name: true },
       });
       if (userRecord?.email) {
-        enqueueEmail({
+        await enqueueEmail({
           userId: userId,
           to: userRecord.email,
           type: "orderConfirmation",

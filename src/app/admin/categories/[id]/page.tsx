@@ -174,7 +174,7 @@ export default function EditCategoryPage() {
               onChange={(e) => setParentId(e.target.value)}
             >
               <option value="">None (Top-level category)</option>
-              {categories.filter(c => c.id !== id).map(c => (
+              {categories.filter(c => c.id !== id && !c.parentId).map(c => (
                 <option key={c.id} value={c.id}>{c.name}</option>
               ))}
             </select>

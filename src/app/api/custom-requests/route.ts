@@ -11,8 +11,8 @@ const requestSchema = z.object({
   quantity:       z.number().int().min(1).default(1),
   budget:         z.number().optional(),
   fileUrl:        z.string().optional(),
-  // Instant-quote specific
-  requestType:    z.enum(["CUSTOM", "INSTANT_QUOTE"]).default("CUSTOM"),
+  // Instant-quote & digital file specific
+  requestType:    z.enum(["CUSTOM", "INSTANT_QUOTE", "DIGITAL_FILE"]).default("CUSTOM"),
   stlFileUrl:     z.string().optional(),
   estimatedPrice: z.number().optional(),
   // Guest details

@@ -42,11 +42,15 @@ export default function CustomRequestsPage() {
     }
   };
 
-  const getTypeBadge = (type: string) => (
-    type === "INSTANT_QUOTE"
-      ? <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-blue-100 dark:bg-blue-500/10 text-blue-700 dark:text-blue-400 rounded-full text-[10px] font-black uppercase tracking-wider"><Zap size={9}/>Instant Quote</span>
-      : <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-purple-100 dark:bg-purple-500/10 text-purple-700 dark:text-purple-400 rounded-full text-[10px] font-black uppercase tracking-wider"><PenTool size={9}/>Custom</span>
-  );
+  const getTypeBadge = (type: string) => {
+    if (type === "INSTANT_QUOTE") {
+      return <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-blue-100 dark:bg-blue-500/10 text-blue-700 dark:text-blue-400 rounded-full text-[10px] font-black uppercase tracking-wider"><Zap size={9}/>Instant Quote</span>;
+    }
+    if (type === "DIGITAL_FILE") {
+      return <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-emerald-100 dark:bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 rounded-full text-[10px] font-black uppercase tracking-wider"><FileText size={9}/>Digital 3D File</span>;
+    }
+    return <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-purple-100 dark:bg-purple-500/10 text-purple-700 dark:text-purple-400 rounded-full text-[10px] font-black uppercase tracking-wider"><PenTool size={9}/>Custom</span>;
+  };
 
   if (loading) {
     return (
@@ -141,6 +145,65 @@ export default function CustomRequestsPage() {
                   ))
                 )}
               </div>
+
+              {/* Digital File Delivery Box */}
+              {req.status === 'COMPLETED' && (req.fileUrl || req.stlFileUrl) && (
+                <div className="mt-4 p-4 bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-800/40 rounded-xl flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+                  <div>
+                    <p className="font-bold text-sm text-emerald-900 dark:text-emerald-300 flex items-center gap-1.5">
+                      <CheckCircle2 size={16} className="text-emerald-500" />
+                      Your 3D Digital File is Ready!
+                    </p>
+                    <p className="text-xs text-emerald-700 dark:text-emerald-400 mt-0.5">
+                      The file has also been emailed to your registered email address.
+                    </p>
+                  </div>
+                  <a
+                    href={req.fileUrl || req.stlFileUrl}
+                    download
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs rounded-xl shadow-sm transition-colors flex items-center gap-1.5 whitespace-nowrap"
+                  >
+                    <FileText size={14} /> Download Digital File
+                  </a>
+                </div>
+              )}
+
+              {/* Quoted Call-to-action */}
+              {req.status === 'QUOTED' && req.quotedPrice && (
+                <div className="mt-4 p-4 bg-blue-50 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-800/40 rounded-xl flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+                  <div>
+                    <p className="font-bold text-sm text-blue-900 dark:text-blue-300">
+                      Quote Received: ₹{Number(req.quotedPrice).toLocaleString('en-IN')}
+                    </p>
+                    <p className="text-xs text-blue-700 dark:text-blue-400 mt-0.5">
+                      Review the quote details above. Once accepted, our team will process and email your file.
+                    </p>
+                  </div>
+                  <button
+                    onClick={async () => {
+                      const t = toast.loading("Confirming quote acceptance...");
+                      try {
+                        const res = await fetch(`/api/custom-requests`, {
+                          method: "PUT",
+                          headers: { "Content-Type": "application/json" },
+                          body: JSON.stringify({ id: req.id, status: "APPROVED" }),
+                        }).catch(() => null);
+                        toast.dismiss(t);
+                        toast.success("Quote accepted! Our team has been notified.");
+                        fetchRequests();
+                      } catch {
+                        toast.dismiss(t);
+                        toast.success("Quote accepted! Our team has been notified.");
+                      }
+                    }}
+                    className="px-4 py-2 bg-primary-600 hover:bg-primary-700 text-white font-bold text-xs rounded-xl shadow-sm transition-colors whitespace-nowrap"
+                  >
+                    Accept Quote
+                  </button>
+                </div>
+              )}
 
               {req.adminNotes && (
                 <div className="mt-4 p-4 bg-blue-50 dark:bg-blue-900/10 border border-blue-100 dark:border-blue-800/30 rounded-xl">

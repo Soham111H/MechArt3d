@@ -1,27 +1,43 @@
 // src/lib/email.ts
 import nodemailer from "nodemailer";
+import { prisma } from "@/lib/prisma";
 
-const isEmailConfigured =
-  process.env.SMTP_USER &&
-  process.env.SMTP_USER !== "placeholder@gmail.com" &&
-  process.env.SMTP_PASS &&
-  process.env.SMTP_PASS !== "placeholder";
-
-// Create transporter — falls back to Ethereal test account in dev if not configured
-function createTransporter() {
-  if (!isEmailConfigured) {
-    console.warn("⚠️  SMTP not configured. Emails will be logged to console only.");
-    return null;
+export async function getEmailConfig() {
+  let dbSettings: Record<string, any> = {};
+  try {
+    const rows = await prisma.setting.findMany({
+      where: {
+        key: {
+          in: ["smtpHost", "smtpPort", "smtpUser", "smtpPass", "smtpSecure", "smtpFrom", "storeEmail", "storeName"]
+        }
+      }
+    });
+    for (const r of rows) {
+      try {
+        dbSettings[r.key] = typeof r.value === "string" && (r.value.startsWith('"') || r.value === "true" || r.value === "false") ? JSON.parse(r.value) : r.value;
+      } catch {
+        dbSettings[r.key] = r.value;
+      }
+    }
+  } catch {
+    // If DB query fails, fall back to process.env
   }
-  return nodemailer.createTransport({
-    host:   process.env.SMTP_HOST || "smtp.gmail.com",
-    port:   Number(process.env.SMTP_PORT) || 587,
-    secure: false,
-    auth: {
-      user: process.env.SMTP_USER,
-      pass: process.env.SMTP_PASS,
-    },
-  });
+
+  const user = dbSettings.smtpUser || process.env.SMTP_USER || process.env.EMAIL_USER || process.env.GMAIL_USER || "";
+  const pass = dbSettings.smtpPass || process.env.SMTP_PASS || process.env.SMTP_PASSWORD || process.env.EMAIL_PASS || process.env.GMAIL_PASS || "";
+  const host = dbSettings.smtpHost || process.env.SMTP_HOST || "smtp.gmail.com";
+  const port = Number(dbSettings.smtpPort || process.env.SMTP_PORT || (host.includes("gmail") ? 587 : 587));
+  const secure = dbSettings.smtpSecure === "true" || dbSettings.smtpSecure === true || process.env.SMTP_SECURE === "true" || port === 465;
+  const from = dbSettings.smtpFrom || process.env.EMAIL_FROM || process.env.SMTP_FROM || (dbSettings.storeName ? `"${dbSettings.storeName}" <${user || "noreply@mechart3d.com"}>` : "MechArt 3D <noreply@mechart3d.com>");
+
+  const isConfigured = Boolean(
+    user &&
+    !user.includes("placeholder") &&
+    pass &&
+    !pass.includes("placeholder")
+  );
+
+  return { host, port, secure, user, pass, from, isConfigured };
 }
 
 interface SendEmailOptions {
@@ -32,20 +48,42 @@ interface SendEmailOptions {
 }
 
 export async function sendEmail({ to, subject, html, text }: SendEmailOptions) {
-  const transporter = createTransporter();
-  const from = process.env.EMAIL_FROM || "MechArt 3D <noreply@mechart3d.com>";
+  const config = await getEmailConfig();
 
-  if (!transporter) {
-    // Log to console in dev so you can still test
-    console.log("\n📧 EMAIL (not sent — SMTP not configured)");
-    console.log(`   To:      ${to}`);
-    console.log(`   Subject: ${subject}`);
-    console.log(`   Body:    ${text || "(html only)"}\n`);
-    return { success: true, preview: null };
+  if (!config.isConfigured) {
+    const errorMsg = "SMTP is not configured. Please set SMTP User and Password in Admin Settings or set SMTP environment variables.";
+    console.warn(`⚠️ [email] ${errorMsg}`);
+    return { success: false, error: errorMsg, preview: null };
   }
 
-  const info = await transporter.sendMail({ from, to, subject, html, text });
-  return { success: true, messageId: info.messageId };
+  try {
+    const transporter = nodemailer.createTransport({
+      host: config.host,
+      port: config.port,
+      secure: config.secure,
+      auth: {
+        user: config.user,
+        pass: config.pass,
+      },
+      connectionTimeout: 10000,
+      greetingTimeout: 10000,
+      socketTimeout: 15000,
+    });
+
+    const info = await transporter.sendMail({
+      from: config.from,
+      to,
+      subject,
+      html,
+      text: text || html.replace(/<[^>]*>?/gm, ""),
+    });
+
+    console.log(`[email] ✅ Email sent to ${to}: ${info.messageId}`);
+    return { success: true, messageId: info.messageId };
+  } catch (error: any) {
+    console.error(`[email] ❌ Failed to send email to ${to}:`, error.message);
+    return { success: false, error: error.message };
+  }
 }
 
 // ─── Email Templates ──────────────────────────────────────────────────────────

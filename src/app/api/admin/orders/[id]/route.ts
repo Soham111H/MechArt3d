@@ -80,7 +80,7 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
       if (fullOrder?.user?.email) {
         const orderRef = fullOrder.orderNumber || orderId.slice(-8).toUpperCase();
         if (data.status === 'SHIPPED') {
-          enqueueEmail({
+          await enqueueEmail({
             userId: fullOrder.userId,
             to: fullOrder.user.email,
             type: 'shipping',
@@ -91,7 +91,7 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
             ],
           });
         } else if (data.status !== 'PENDING') {
-          enqueueEmail({
+          await enqueueEmail({
             userId: fullOrder.userId,
             to: fullOrder.user.email,
             type: 'orderStatus',

@@ -13,6 +13,35 @@ export async function GET() {
         slug: true,
         description: true,
         imageUrl: true,
+        parentId: true,
+        parent: {
+          select: {
+            id: true,
+            name: true,
+            slug: true,
+          },
+        },
+        children: {
+          where: { deletedAt: null },
+          select: {
+            id: true,
+            name: true,
+            slug: true,
+            description: true,
+            imageUrl: true,
+            _count: {
+              select: {
+                products: {
+                  where: {
+                    isActive: true,
+                    status: "PUBLISHED",
+                    deletedAt: null,
+                  },
+                },
+              },
+            },
+          },
+        },
         _count: {
           select: {
             products: {

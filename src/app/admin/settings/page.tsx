@@ -4,20 +4,20 @@ import { useEffect, useState } from "react";
 import {
   Settings, Store, IndianRupee, MessageCircle, Shield,
   Globe, Share2, FileText, Megaphone, Search, RotateCcw,
-  Save, Eye, EyeOff, Bell
+  Save, Eye, EyeOff, Bell, Mail
 } from "lucide-react";
 import toast from "react-hot-toast";
 import { useSettingsStore, StoreSettings, defaultSettings } from "@/store/useSettingsStore";
 
 import { LucideIcon } from "lucide-react";
 
-type Tab = "store" | "pricing" | "homepage" | "popup" | "footer" | "seo" | "integrations" | "policies" | "system";
+type Tab = "store" | "pricing" | "homepage" | "email" | "footer" | "seo" | "integrations" | "policies" | "system";
 
 const tabs: { id: Tab; label: string; icon: LucideIcon }[] = [
   { id: "store",        label: "Store Info",    icon: Store },
   { id: "pricing",      label: "Pricing",       icon: IndianRupee },
   { id: "homepage",     label: "Homepage",      icon: Globe },
-  { id: "popup",        label: "Popup Banner",  icon: Bell },
+  { id: "email",        label: "Email (SMTP)",  icon: Mail },
   { id: "footer",       label: "Footer & Social", icon: Share2 },
   { id: "seo",          label: "SEO",           icon: Search },
   { id: "integrations", label: "Integrations",  icon: MessageCircle },
@@ -310,35 +310,134 @@ export default function SettingsPage() {
             </div>
           )}
 
-          {/* ── POPUP BANNER ── */}
-          {activeTab === "popup" && (
-            <div className="card bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-6 shadow-sm space-y-5">
-              <h2 className="text-lg font-bold flex items-center gap-2 border-b border-slate-100 dark:border-slate-800 pb-3">
-                <Bell size={18} className="text-purple-500" /> Homepage Popup Banner
-              </h2>
-              <Toggle name="popupEnabled" checked={local.popupEnabled} onChange={handleChange} label="Enable Popup Banner" desc="Show a promotional popup on the homepage once per session" />
-              
-              <div className="grid sm:grid-cols-2 gap-5 mt-4">
-                <Field label="Popup Title" hint="Main heading of the popup">
-                  <input type="text" name="popupTitle" value={local.popupTitle} onChange={handleChange} className={inputCls} />
-                </Field>
-                <Field label="Popup Delay (Seconds)" hint="How long to wait before showing">
-                  <input type="number" name="popupDelaySeconds" value={local.popupDelaySeconds} onChange={handleChange} className={inputCls} min="0" />
-                </Field>
-                <div className="sm:col-span-2">
-                  <Field label="Popup Text" hint="The main content description">
-                    <textarea name="popupText" value={local.popupText} onChange={handleChange} className={textareaCls} />
+          {/* ── EMAIL (SMTP) ── */}
+          {activeTab === "email" && (
+            <div className="space-y-6">
+              <div className="card bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-6 shadow-sm space-y-5">
+                <h2 className="text-lg font-bold flex items-center gap-2 border-b border-slate-100 dark:border-slate-800 pb-3">
+                  <Mail size={18} className="text-primary-500" /> SMTP Email Server Configuration
+                </h2>
+                <p className="text-xs text-slate-500">
+                  Configure your SMTP credentials below to enable password reset emails, order confirmations, and notifications.
+                  Settings saved here take effect immediately without redeploying.
+                </p>
+
+                <div className="grid sm:grid-cols-2 gap-5 mt-4">
+                  <Field label="SMTP Host" hint="e.g. smtp.gmail.com, smtp.sendgrid.net, or mail.yourdomain.com">
+                    <input
+                      type="text"
+                      name="smtpHost"
+                      value={local.smtpHost || "smtp.gmail.com"}
+                      onChange={handleChange}
+                      className={inputCls}
+                      placeholder="smtp.gmail.com"
+                    />
                   </Field>
+
+                  <Field label="SMTP Port" hint="Usually 587 (TLS) or 465 (SSL)">
+                    <input
+                      type="number"
+                      name="smtpPort"
+                      value={local.smtpPort || 587}
+                      onChange={handleChange}
+                      className={inputCls}
+                    />
+                  </Field>
+
+                  <Field label="SMTP Username / Email" hint="Your email address (e.g. yourstore@gmail.com)">
+                    <input
+                      type="text"
+                      name="smtpUser"
+                      value={local.smtpUser || ""}
+                      onChange={handleChange}
+                      className={inputCls}
+                      placeholder="youremail@gmail.com"
+                    />
+                  </Field>
+
+                  <Field label="SMTP Password / App Password" hint="For Gmail, use a 16-character App Password (not your normal password)">
+                    <input
+                      type="password"
+                      name="smtpPass"
+                      value={local.smtpPass || ""}
+                      onChange={handleChange}
+                      className={inputCls}
+                      placeholder="••••••••••••••••"
+                    />
+                  </Field>
+
+                  <Field label="Sender Name & Email (From)" hint="e.g. MechArt 3D <orders@mechart3d.com>">
+                    <input
+                      type="text"
+                      name="smtpFrom"
+                      value={local.smtpFrom || "MechArt 3D <noreply@mechart3d.com>"}
+                      onChange={handleChange}
+                      className={inputCls}
+                      placeholder="MechArt 3D <noreply@mechart3d.com>"
+                    />
+                  </Field>
+
+                  <div className="flex items-center pt-6">
+                    <Toggle
+                      name="smtpSecure"
+                      checked={Boolean(local.smtpSecure || local.smtpPort === 465)}
+                      onChange={handleChange}
+                      label="Use SSL/TLS (Port 465)"
+                      desc="Enable for SSL on port 465, disable for STARTTLS on port 587"
+                    />
+                  </div>
                 </div>
-                <Field label="Image URL (Optional)" hint="Full URL to an image for the popup">
-                  <input type="text" name="popupImage" value={local.popupImage} onChange={handleChange} className={inputCls} placeholder="https://..." />
-                </Field>
-                <Field label="Button Link" hint="Where the user goes when clicking the button">
-                  <input type="text" name="popupLink" value={local.popupLink} onChange={handleChange} className={inputCls} />
-                </Field>
-                <Field label="Button Text" hint="Label for the action button">
-                  <input type="text" name="popupLinkText" value={local.popupLinkText} onChange={handleChange} className={inputCls} />
-                </Field>
+
+                <div className="p-4 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800/50 rounded-xl text-xs text-blue-700 dark:text-blue-300 leading-relaxed">
+                  💡 <strong>Gmail Setup Guide:</strong> In your Google Account: Go to <strong>Security</strong> &gt; <strong>2-Step Verification</strong> &gt; <strong>App Passwords</strong>. Generate a new app password for "Mail" and paste the 16-character password into the field above. Remember to click <strong>Save Changes</strong> above!
+                </div>
+              </div>
+
+              {/* Live Test Email Section */}
+              <div className="card bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-6 shadow-sm space-y-4">
+                <h3 className="font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                  <Mail size={16} className="text-emerald-500" /> Send Test Email
+                </h3>
+                <p className="text-sm text-slate-500">
+                  Send a test email to verify your SMTP configuration works and delivers successfully.
+                </p>
+                <div className="flex flex-col sm:flex-row gap-3 max-w-md">
+                  <input
+                    type="email"
+                    id="smtpTestEmailInput"
+                    placeholder="Enter recipient email..."
+                    className="flex-1 px-4 py-2.5 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl text-sm focus:ring-2 focus:ring-primary-500 outline-none"
+                  />
+                  <button
+                    type="button"
+                    onClick={async () => {
+                      const input = document.getElementById('smtpTestEmailInput') as HTMLInputElement;
+                      if (!input?.value) return toast.error('Enter a recipient email address');
+                      
+                      const t = toast.loading('Sending test email via SMTP...');
+                      try {
+                        const res = await fetch('/api/admin/test-email', {
+                          method: 'POST',
+                          headers: { 'Content-Type': 'application/json' },
+                          body: JSON.stringify({ to: input.value.trim() }),
+                        });
+                        const data = await res.json();
+                        toast.dismiss(t);
+                        if (res.ok) {
+                          toast.success(data.message || '✅ Test email delivered successfully!');
+                        } else {
+                          toast.error(data.error || 'Failed to send test email');
+                        }
+                      } catch (err: any) {
+                        toast.dismiss(t);
+                        toast.error(err.message || 'Network error sending test email');
+                      }
+                    }}
+                    className="btn-primary text-sm px-6 whitespace-nowrap"
+                  >
+                    Send Test Email
+                  </button>
+                </div>
               </div>
             </div>
           )}
@@ -428,36 +527,19 @@ export default function SettingsPage() {
                 </div>
               )}
 
-              {/* Test Email */}
-              <div className="bg-slate-50 dark:bg-slate-800/50 rounded-xl p-5 mt-8 border border-slate-200 dark:border-slate-700">
-                <h3 className="font-bold text-slate-900 dark:text-white mb-1">Test Email (SMTP)</h3>
-                <p className="text-sm text-slate-500 mb-4">Send a test email to verify your SMTP configuration works correctly.</p>
-                <div className="flex gap-3 max-w-md">
-                  <input
-                    type="email"
-                    id="testEmailInput"
-                    placeholder="recipient@example.com"
-                    className="flex-1 px-4 py-2.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl text-sm focus:ring-2 focus:ring-primary-500 outline-none"
-                  />
-                  <button
-                    type="button"
-                    onClick={async () => {
-                      const input = document.getElementById('testEmailInput') as HTMLInputElement;
-                      if (!input?.value) return toast.error('Enter a recipient email');
-                      const res = await fetch('/api/admin/test-email', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ to: input.value }),
-                      });
-                      const data = await res.json();
-                      if (res.ok) toast.success(data.message || 'Test email sent!');
-                      else toast.error(data.error || 'Failed to send');
-                    }}
-                    className="btn-primary text-sm px-5 whitespace-nowrap"
-                  >
-                    Send Test
-                  </button>
+              {/* Email SMTP Link */}
+              <div className="bg-slate-50 dark:bg-slate-800/50 rounded-xl p-5 mt-8 border border-slate-200 dark:border-slate-700 flex items-center justify-between">
+                <div>
+                  <h3 className="font-bold text-slate-900 dark:text-white mb-1">Email Server (SMTP)</h3>
+                  <p className="text-sm text-slate-500">Configure SMTP credentials and test email delivery in the Email (SMTP) tab.</p>
                 </div>
+                <button
+                  type="button"
+                  onClick={() => setActiveTab("email")}
+                  className="btn-outline text-sm px-4 py-2"
+                >
+                  Configure SMTP →
+                </button>
               </div>
 
             </div>

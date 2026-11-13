@@ -43,10 +43,18 @@ export default function CategoriesPage() {
     }
   };
 
-  const filteredCategories = categories.filter(c => 
-    c.name.toLowerCase().includes(search.toLowerCase()) || 
-    c.slug.toLowerCase().includes(search.toLowerCase())
-  );
+  const [hierarchyFilter, setHierarchyFilter] = useState<"ALL" | "PARENTS" | "CHILDREN">("ALL");
+
+  const filteredCategories = categories.filter(c => {
+    const matchesSearch =
+      c.name.toLowerCase().includes(search.toLowerCase()) || 
+      c.slug.toLowerCase().includes(search.toLowerCase());
+    
+    if (!matchesSearch) return false;
+    if (hierarchyFilter === "PARENTS") return !c.parentId;
+    if (hierarchyFilter === "CHILDREN") return Boolean(c.parentId);
+    return true;
+  });
 
   return (
     <div className="space-y-6 animate-fade-in-up">
@@ -64,8 +72,8 @@ export default function CategoriesPage() {
       </div>
 
       <div className="card overflow-hidden bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-sm">
-        <div className="p-4 border-b border-slate-200 dark:border-slate-800">
-          <div className="relative max-w-sm">
+        <div className="p-4 border-b border-slate-200 dark:border-slate-800 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-4">
+          <div className="relative max-w-sm flex-1">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
             <input 
               type="text" 
@@ -75,15 +83,49 @@ export default function CategoriesPage() {
               className="w-full pl-10 pr-4 py-2 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl text-sm focus:ring-2 focus:ring-primary-500 focus:border-transparent outline-none transition-all"
             />
           </div>
+
+          <div className="flex items-center gap-1.5 bg-slate-100 dark:bg-slate-800/80 p-1 rounded-xl text-xs font-bold">
+            <button
+              onClick={() => setHierarchyFilter("ALL")}
+              className={`px-3 py-1.5 rounded-lg transition-all ${
+                hierarchyFilter === "ALL"
+                  ? "bg-white dark:bg-slate-900 text-slate-900 dark:text-white shadow-sm"
+                  : "text-slate-500 hover:text-slate-900 dark:hover:text-white"
+              }`}
+            >
+              All ({categories.length})
+            </button>
+            <button
+              onClick={() => setHierarchyFilter("PARENTS")}
+              className={`px-3 py-1.5 rounded-lg transition-all ${
+                hierarchyFilter === "PARENTS"
+                  ? "bg-white dark:bg-slate-900 text-slate-900 dark:text-white shadow-sm"
+                  : "text-slate-500 hover:text-slate-900 dark:hover:text-white"
+              }`}
+            >
+              Main ({categories.filter(c => !c.parentId).length})
+            </button>
+            <button
+              onClick={() => setHierarchyFilter("CHILDREN")}
+              className={`px-3 py-1.5 rounded-lg transition-all ${
+                hierarchyFilter === "CHILDREN"
+                  ? "bg-white dark:bg-slate-900 text-slate-900 dark:text-white shadow-sm"
+                  : "text-slate-500 hover:text-slate-900 dark:hover:text-white"
+              }`}
+            >
+              Subcategories ({categories.filter(c => c.parentId).length})
+            </button>
+          </div>
         </div>
 
         <div className="overflow-x-auto">
           <table className="w-full text-left text-sm whitespace-nowrap">
             <thead className="bg-slate-50 dark:bg-slate-950/50 text-slate-500 dark:text-slate-400">
               <tr>
-                <th className="px-6 py-4 font-semibold">Name</th>
+                <th className="px-6 py-4 font-semibold">Category</th>
+                <th className="px-6 py-4 font-semibold">Hierarchy Level</th>
                 <th className="px-6 py-4 font-semibold">Slug</th>
-                <th className="px-6 py-4 font-semibold">Parent</th>
+                <th className="px-6 py-4 font-semibold">Parent Category</th>
                 <th className="px-6 py-4 font-semibold">Products</th>
                 <th className="px-6 py-4 font-semibold text-right">Actions</th>
               </tr>
@@ -91,13 +133,13 @@ export default function CategoriesPage() {
             <tbody className="divide-y divide-slate-200 dark:divide-slate-800">
               {loading ? (
                 <tr>
-                  <td colSpan={5} className="px-6 py-8 text-center text-slate-500">
+                  <td colSpan={6} className="px-6 py-8 text-center text-slate-500">
                     <div className="w-6 h-6 border-2 border-primary-500 border-t-transparent rounded-full animate-spin mx-auto"></div>
                   </td>
                 </tr>
               ) : filteredCategories.length === 0 ? (
                 <tr>
-                  <td colSpan={5} className="px-6 py-8 text-center text-slate-500">
+                  <td colSpan={6} className="px-6 py-8 text-center text-slate-500">
                     No categories found.
                   </td>
                 </tr>
@@ -112,11 +154,34 @@ export default function CategoriesPage() {
                           <FolderTree size={16} className="text-slate-400" />
                         </div>
                       )}
-                      {cat.name}
+                      <div>
+                        <span className="block font-bold">{cat.name}</span>
+                        {cat.description && (
+                          <span className="text-xs text-slate-400 truncate max-w-xs block font-normal">{cat.description}</span>
+                        )}
+                      </div>
+                    </td>
+                    <td className="px-6 py-4">
+                      {cat.parentId ? (
+                        <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-bold bg-amber-50 dark:bg-amber-900/20 text-amber-700 dark:text-amber-400 border border-amber-200 dark:border-amber-800/30">
+                          Subcategory
+                        </span>
+                      ) : (
+                        <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-bold bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-400 border border-blue-200 dark:border-blue-800/30">
+                          Main Category
+                        </span>
+                      )}
                     </td>
                     <td className="px-6 py-4 text-slate-500 font-mono text-xs">{cat.slug}</td>
                     <td className="px-6 py-4 text-slate-500">
-                      {cat.parent ? <span className="px-2 py-1 bg-slate-100 dark:bg-slate-800 rounded-md text-xs">{cat.parent.name}</span> : "—"}
+                      {cat.parent ? (
+                        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-slate-100 dark:bg-slate-800 rounded-lg text-xs font-semibold text-slate-700 dark:text-slate-300">
+                          <FolderTree size={12} className="text-primary-500" />
+                          {cat.parent.name}
+                        </span>
+                      ) : (
+                        <span className="text-slate-400 text-xs italic">None (Root)</span>
+                      )}
                     </td>
                     <td className="px-6 py-4">
                       <span className="px-2.5 py-1 bg-primary-50 text-primary-700 dark:bg-primary-500/10 dark:text-primary-400 rounded-full text-xs font-bold">

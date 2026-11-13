@@ -44,8 +44,14 @@ export interface StoreSettings {
   seoTitle: string;
   seoDescription: string;
 
-  // Integrations
+  // Integrations & Email
   whatsappNumber: string;
+  smtpHost: string;
+  smtpPort: number;
+  smtpUser: string;
+  smtpPass: string;
+  smtpSecure: boolean;
+  smtpFrom: string;
 
   // Policies (markdown/text)
   returnPolicy: string;
@@ -98,6 +104,12 @@ const defaultSettings: StoreSettings = {
   seoDescription: 'Shop premium 3D printed products, order custom designs, and explore 3D printing services.',
 
   whatsappNumber: '+91 99999 99999',
+  smtpHost: 'smtp.gmail.com',
+  smtpPort: 587,
+  smtpUser: '',
+  smtpPass: '',
+  smtpSecure: false,
+  smtpFrom: 'MechArt 3D <noreply@mechart3d.com>',
 
   returnPolicy: '## Return Policy\n\nWe accept returns within 7 days of delivery for defective or damaged items. Custom orders are non-refundable.',
   shippingPolicy: '## Shipping Policy\n\nAll orders are processed within 2-3 business days. Standard delivery takes 5-7 business days.',

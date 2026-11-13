@@ -93,6 +93,13 @@ function ProductsCatalogContent() {
   const activeCategoryObj = categories.find(
     (c) => c.slug === selectedCategory || c.id === selectedCategory
   );
+  const parentCategories = categories.filter((c) => !c.parentId);
+  const activeParent = activeCategoryObj?.parentId
+    ? categories.find((c) => c.id === activeCategoryObj.parentId)
+    : activeCategoryObj;
+  const subcategoriesForActive = activeParent
+    ? categories.filter((c) => c.parentId === activeParent.id)
+    : [];
 
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-slate-950 pb-20">
@@ -204,47 +211,91 @@ function ProductsCatalogContent() {
       </div>
 
       <div className="max-w-7xl mx-auto px-4 md:px-6 py-8">
-        {/* Horizontal Category Pill Bar (Fast Navigation on Desktop & Mobile) */}
+        {/* Horizontal Category Pill Bar */}
         {categories.length > 0 && (
-          <div className="mb-6 flex items-center gap-2 overflow-x-auto pb-2 scrollbar-none">
-            <button
-              onClick={() => handleSelectCategory("")}
-              className={`px-4 py-2 rounded-xl text-xs font-bold uppercase tracking-wider whitespace-nowrap transition-all ${
-                !selectedCategory
-                  ? "bg-primary-600 text-white shadow-sm shadow-primary-500/30"
-                  : "bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400 hover:border-primary-400"
-              }`}
-            >
-              All Categories
-            </button>
-            {categories.map((cat) => {
-              const isSelected =
-                selectedCategory === cat.slug || selectedCategory === cat.id;
-              return (
+          <div className="mb-6 space-y-2">
+            <div className="flex items-center gap-2 overflow-x-auto pb-2 scrollbar-none">
+              <button
+                onClick={() => handleSelectCategory("")}
+                className={`px-4 py-2 rounded-xl text-xs font-bold uppercase tracking-wider whitespace-nowrap transition-all ${
+                  !selectedCategory
+                    ? "bg-primary-600 text-white shadow-sm shadow-primary-500/30"
+                    : "bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400 hover:border-primary-400"
+                }`}
+              >
+                All Categories
+              </button>
+              {parentCategories.map((cat) => {
+                const isSelected =
+                  selectedCategory === cat.slug ||
+                  selectedCategory === cat.id ||
+                  activeParent?.id === cat.id;
+                return (
+                  <button
+                    key={cat.id}
+                    onClick={() => handleSelectCategory(cat.slug || cat.id)}
+                    className={`px-4 py-2 rounded-xl text-xs font-bold whitespace-nowrap transition-all flex items-center gap-1.5 ${
+                      isSelected
+                        ? "bg-primary-600 text-white shadow-sm shadow-primary-500/30"
+                        : "bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400 hover:border-primary-400"
+                    }`}
+                  >
+                    <span>{cat.name}</span>
+                    {cat._count?.products > 0 && (
+                      <span
+                        className={`text-[10px] px-1.5 py-0.2 rounded-full ${
+                          isSelected
+                            ? "bg-white/20 text-white"
+                            : "bg-slate-100 dark:bg-slate-800 text-slate-500"
+                        }`}
+                      >
+                        {cat._count.products}
+                      </span>
+                    )}
+                  </button>
+                );
+              })}
+            </div>
+
+            {/* Subcategories Row (when an active parent category has children) */}
+            {activeParent && subcategoriesForActive.length > 0 && (
+              <div className="flex items-center gap-2 overflow-x-auto pb-2 pl-2 scrollbar-none border-t border-slate-200 dark:border-slate-800/60 pt-2 bg-slate-100/60 dark:bg-slate-900/40 p-2 rounded-xl">
+                <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400 shrink-0">
+                  {activeParent.name} Subcategories:
+                </span>
                 <button
-                  key={cat.id}
-                  onClick={() => handleSelectCategory(cat.slug || cat.id)}
-                  className={`px-4 py-2 rounded-xl text-xs font-bold whitespace-nowrap transition-all flex items-center gap-1.5 ${
-                    isSelected
-                      ? "bg-primary-600 text-white shadow-sm shadow-primary-500/30"
-                      : "bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400 hover:border-primary-400"
+                  onClick={() => handleSelectCategory(activeParent.slug || activeParent.id)}
+                  className={`px-3 py-1 rounded-lg text-xs font-semibold whitespace-nowrap transition-all ${
+                    selectedCategory === activeParent.slug || selectedCategory === activeParent.id
+                      ? "bg-primary-600 text-white font-bold shadow-sm"
+                      : "bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-700"
                   }`}
                 >
-                  <span>{cat.name}</span>
-                  {cat._count?.products > 0 && (
-                    <span
-                      className={`text-[10px] px-1.5 py-0.2 rounded-full ${
-                        isSelected
-                          ? "bg-white/20 text-white"
-                          : "bg-slate-100 dark:bg-slate-800 text-slate-500"
+                  All {activeParent.name}
+                </button>
+                {subcategoriesForActive.map((sub) => {
+                  const isSubSelected = selectedCategory === sub.slug || selectedCategory === sub.id;
+                  return (
+                    <button
+                      key={sub.id}
+                      onClick={() => handleSelectCategory(sub.slug || sub.id)}
+                      className={`px-3 py-1 rounded-lg text-xs font-semibold whitespace-nowrap transition-all flex items-center gap-1 ${
+                        isSubSelected
+                          ? "bg-primary-600 text-white font-bold shadow-sm"
+                          : "bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-700"
                       }`}
                     >
-                      {cat._count.products}
-                    </span>
-                  )}
-                </button>
-              );
-            })}
+                      <span>{sub.name}</span>
+                      {sub._count?.products > 0 && (
+                        <span className="text-[10px] opacity-80 font-mono">
+                          ({sub._count.products})
+                        </span>
+                      )}
+                    </button>
+                  );
+                })}
+              </div>
+            )}
           </div>
         )}
 
@@ -304,7 +355,7 @@ function ProductsCatalogContent() {
                     </button>
                   )}
                 </div>
-                <div className="space-y-1.5 max-h-60 overflow-y-auto scrollbar-thin pr-1">
+                <div className="space-y-1.5 max-h-72 overflow-y-auto scrollbar-thin pr-1">
                   <button
                     type="button"
                     onClick={() => handleSelectCategory("")}
@@ -316,33 +367,70 @@ function ProductsCatalogContent() {
                   >
                     <span>All Categories</span>
                   </button>
-                  {categories.map((cat) => {
-                    const isSelected =
-                      selectedCategory === cat.slug || selectedCategory === cat.id;
+                  {parentCategories.map((parent) => {
+                    const isParentSelected =
+                      selectedCategory === parent.slug || selectedCategory === parent.id;
+                    const children = categories.filter((c) => c.parentId === parent.id);
+                    const isChildSelected = children.some(
+                      (c) => selectedCategory === c.slug || selectedCategory === c.id
+                    );
+
                     return (
-                      <button
-                        key={cat.id}
-                        type="button"
-                        onClick={() => handleSelectCategory(cat.slug || cat.id)}
-                        className={`w-full flex items-center justify-between px-3 py-2 rounded-xl text-sm transition-colors text-left ${
-                          isSelected
-                            ? "bg-primary-50 dark:bg-primary-950/40 text-primary-700 dark:text-primary-300 font-bold"
-                            : "text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-900 font-medium"
-                        }`}
-                      >
-                        <span className="truncate">{cat.name}</span>
-                        {cat._count?.products !== undefined && (
-                          <span
-                            className={`text-xs px-2 py-0.5 rounded-full ${
-                              isSelected
-                                ? "bg-primary-100 dark:bg-primary-900/60 text-primary-700 dark:text-primary-300 font-bold"
-                                : "bg-slate-100 dark:bg-slate-800 text-slate-500"
-                            }`}
-                          >
-                            {cat._count.products}
-                          </span>
+                      <div key={parent.id} className="space-y-1">
+                        <button
+                          type="button"
+                          onClick={() => handleSelectCategory(parent.slug || parent.id)}
+                          className={`w-full flex items-center justify-between px-3 py-2 rounded-xl text-sm transition-colors text-left ${
+                            isParentSelected
+                              ? "bg-primary-50 dark:bg-primary-950/40 text-primary-700 dark:text-primary-300 font-bold"
+                              : isChildSelected
+                              ? "text-primary-600 dark:text-primary-400 font-semibold"
+                              : "text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-900 font-medium"
+                          }`}
+                        >
+                          <span className="truncate">{parent.name}</span>
+                          {parent._count?.products !== undefined && (
+                            <span
+                              className={`text-xs px-2 py-0.5 rounded-full ${
+                                isParentSelected
+                                  ? "bg-primary-100 dark:bg-primary-900/60 text-primary-700 dark:text-primary-300 font-bold"
+                                  : "bg-slate-100 dark:bg-slate-800 text-slate-500"
+                              }`}
+                            >
+                              {parent._count.products}
+                            </span>
+                          )}
+                        </button>
+
+                        {/* Indented child subcategories */}
+                        {children.length > 0 && (
+                          <div className="pl-4 space-y-1 border-l-2 border-slate-200 dark:border-slate-800 ml-3">
+                            {children.map((child) => {
+                              const isSubSelected =
+                                selectedCategory === child.slug || selectedCategory === child.id;
+                              return (
+                                <button
+                                  key={child.id}
+                                  type="button"
+                                  onClick={() => handleSelectCategory(child.slug || child.id)}
+                                  className={`w-full flex items-center justify-between px-2.5 py-1.5 rounded-lg text-xs transition-colors text-left ${
+                                    isSubSelected
+                                      ? "bg-primary-100 dark:bg-primary-950/60 text-primary-700 dark:text-primary-300 font-bold"
+                                      : "text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-slate-800 dark:hover:text-slate-200"
+                                  }`}
+                                >
+                                  <span className="truncate">↳ {child.name}</span>
+                                  {child._count?.products !== undefined && (
+                                    <span className="text-[10px] text-slate-400 font-mono">
+                                      {child._count.products}
+                                    </span>
+                                  )}
+                                </button>
+                              );
+                            })}
+                          </div>
                         )}
-                      </button>
+                      </div>
                     );
                   })}
                 </div>

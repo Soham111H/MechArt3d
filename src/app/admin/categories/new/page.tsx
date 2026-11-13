@@ -137,8 +137,8 @@ export default function NewCategoryPage() {
             onChange={(e) => setFormData({ ...formData, parentId: e.target.value })}
             className="w-full px-4 py-3 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl focus:ring-2 focus:ring-primary-500 outline-none transition-all"
           >
-            <option value="">None (Top Level)</option>
-            {parents.map(p => (
+            <option value="">None (Top Level Category)</option>
+            {parents.filter(p => !p.parentId).map(p => (
               <option key={p.id} value={p.id}>{p.name}</option>
             ))}
           </select>

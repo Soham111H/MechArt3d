@@ -34,16 +34,20 @@ const SUBJECT_MAP: Record<string, string> = {
 };
 
 /**
- * Enqueue and immediately fire an email in the background.
- * Never await this — it must not block the API response.
+ * Enqueue and fire an email.
+ * Returns a Promise that can be awaited in serverless environments (e.g. Vercel)
+ * to avoid lambda execution termination before email delivery completes.
  */
-export function enqueueEmail(job: EmailJob): void {
-  sendEmailBackground(job).catch(err =>
-    console.error(`[email-queue] Unhandled error sending ${job.type}:`, err)
-  );
+export async function enqueueEmail(job: EmailJob): Promise<boolean> {
+  try {
+    return await sendEmailBackground(job);
+  } catch (err) {
+    console.error(`[email-queue] Unhandled error sending ${job.type}:`, err);
+    return false;
+  }
 }
 
-async function sendEmailBackground(job: EmailJob): Promise<void> {
+async function sendEmailBackground(job: EmailJob): Promise<boolean> {
   let logId: string | null = null;
 
   try {
@@ -64,7 +68,10 @@ async function sendEmailBackground(job: EmailJob): Promise<void> {
     const subject = SUBJECT_MAP[job.type] || 'MechArt 3D Notification';
 
     // Send via Nodemailer
-    await sendEmail({ to: job.to, subject, html });
+    const result = await sendEmail({ to: job.to, subject, html });
+    if (!result.success) {
+      throw new Error(result.error || "Failed to deliver email via SMTP");
+    }
 
     // Mark as SENT
     if (logId) {
@@ -75,6 +82,7 @@ async function sendEmailBackground(job: EmailJob): Promise<void> {
     }
 
     console.log(`[email-queue] ✅ Sent "${job.type}" to ${job.to}`);
+    return true;
   } catch (error) {
     console.error(`[email-queue] ❌ Failed "${job.type}" to ${job.to}:`, error);
     if (logId) {
@@ -82,5 +90,6 @@ async function sendEmailBackground(job: EmailJob): Promise<void> {
         .update({ where: { id: logId }, data: { status: 'FAILED', error: String(error) } })
         .catch(() => {});
     }
+    return false;
   }
 }

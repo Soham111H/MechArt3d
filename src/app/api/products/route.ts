@@ -27,13 +27,36 @@ export async function GET(req: NextRequest) {
     }
 
     if (categoryParam && categoryParam !== "ALL" && categoryParam !== "") {
-      whereClause.category = {
-        OR: [
-          { id: categoryParam },
-          { slug: categoryParam },
-          { name: categoryParam },
-        ],
-      };
+      const targetCat = await prisma.category.findFirst({
+        where: {
+          OR: [
+            { id: categoryParam },
+            { slug: categoryParam },
+            { name: categoryParam },
+          ],
+          deletedAt: null,
+        },
+        select: {
+          id: true,
+          children: {
+            where: { deletedAt: null },
+            select: { id: true },
+          },
+        },
+      });
+
+      if (targetCat) {
+        const catIds = [targetCat.id, ...targetCat.children.map((c) => c.id)];
+        whereClause.categoryId = { in: catIds };
+      } else {
+        whereClause.category = {
+          OR: [
+            { id: categoryParam },
+            { slug: categoryParam },
+            { name: categoryParam },
+          ],
+        };
+      }
     }
 
     if (material) whereClause.material = material;

@@ -25,9 +25,42 @@ export default function AdminCustomRequestsPage() {
   const [selectedRequest, setSelectedRequest] = useState<any>(null);
   const [quotePrice, setQuotePrice]       = useState("");
   const [adminNotes, setAdminNotes]       = useState("");
+  const [digitalFileUrl, setDigitalFileUrl] = useState("");
+  const [uploadingFile, setUploadingFile] = useState(false);
   const [updating, setUpdating]           = useState(false);
 
   useEffect(() => { fetchRequests(); }, [statusFilter, typeFilter]);
+
+  useEffect(() => {
+    if (selectedRequest) {
+      setQuotePrice(selectedRequest.quotedPrice ? String(selectedRequest.quotedPrice) : "");
+      setAdminNotes(selectedRequest.adminNotes || "");
+      setDigitalFileUrl(selectedRequest.fileUrl || "");
+    }
+  }, [selectedRequest]);
+
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setUploadingFile(true);
+    const fd = new FormData();
+    fd.append("file", file);
+    fd.append("folder", "digital-files");
+    try {
+      const res = await fetch("/api/upload", { method: "POST", body: fd });
+      const data = await res.json();
+      if (data.success && data.url) {
+        setDigitalFileUrl(data.url);
+        toast.success("File uploaded successfully!");
+      } else {
+        toast.error(data.error || "Upload failed");
+      }
+    } catch {
+      toast.error("Upload failed");
+    } finally {
+      setUploadingFile(false);
+    }
+  };
 
   const fetchRequests = async () => {
     setLoading(true);
@@ -46,17 +79,27 @@ export default function AdminCustomRequestsPage() {
     }
   };
 
-  const updateRequestStatus = async (status: string) => {
+  const updateRequestStatus = async (status: string, sendEmailFlag: boolean = false) => {
     if (!selectedRequest) return;
     setUpdating(true);
     try {
       const res = await fetch(`/api/admin/custom-requests/${selectedRequest.id}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ status, quotedPrice: quotePrice ? Number(quotePrice) : null, adminNotes: adminNotes || null }),
+        body: JSON.stringify({
+          status,
+          quotedPrice: quotePrice ? Number(quotePrice) : null,
+          adminNotes: adminNotes || null,
+          fileUrl: digitalFileUrl || undefined,
+          sendEmailNotification: sendEmailFlag || status === "QUOTED" || status === "COMPLETED",
+        }),
       });
       if (!res.ok) throw new Error();
-      toast.success(`Marked as ${status}`);
+      toast.success(
+        status === "COMPLETED" && sendEmailFlag
+          ? "✅ File emailed to customer & marked Completed!"
+          : `Marked as ${status}`
+      );
       setSelectedRequest(null);
       fetchRequests();
     } catch {
@@ -101,11 +144,15 @@ export default function AdminCustomRequestsPage() {
     );
   };
 
-  const getTypeBadge = (type: string) => (
-    type === "INSTANT_QUOTE"
-      ? <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-blue-100 dark:bg-blue-500/10 text-blue-700 dark:text-blue-400 rounded-full text-[10px] font-black uppercase tracking-wider"><Zap size={9}/>Instant Quote</span>
-      : <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-purple-100 dark:bg-purple-500/10 text-purple-700 dark:text-purple-400 rounded-full text-[10px] font-black uppercase tracking-wider"><PenTool size={9}/>Custom</span>
-  );
+  const getTypeBadge = (type: string) => {
+    if (type === "INSTANT_QUOTE") {
+      return <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-blue-100 dark:bg-blue-500/10 text-blue-700 dark:text-blue-400 rounded-full text-[10px] font-black uppercase tracking-wider"><Zap size={9}/>Instant Quote</span>;
+    }
+    if (type === "DIGITAL_FILE") {
+      return <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-emerald-100 dark:bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 rounded-full text-[10px] font-black uppercase tracking-wider"><FileText size={9}/>Digital 3D File</span>;
+    }
+    return <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-purple-100 dark:bg-purple-500/10 text-purple-700 dark:text-purple-400 rounded-full text-[10px] font-black uppercase tracking-wider"><PenTool size={9}/>Custom</span>;
+  };
 
   const filtered = requests.filter(r =>
     !search ||
@@ -127,12 +174,15 @@ export default function AdminCustomRequestsPage() {
           </p>
         </div>
         {/* Stats chips */}
-        <div className="flex gap-2">
+        <div className="flex flex-wrap gap-2">
           <span className="px-3 py-1.5 bg-purple-50 dark:bg-purple-500/10 text-purple-700 dark:text-purple-400 rounded-lg text-xs font-bold">
             {requests.filter(r=>r.requestType==='CUSTOM').length} Custom
           </span>
           <span className="px-3 py-1.5 bg-blue-50 dark:bg-blue-500/10 text-blue-700 dark:text-blue-400 rounded-lg text-xs font-bold">
             {requests.filter(r=>r.requestType==='INSTANT_QUOTE').length} Instant Quote
+          </span>
+          <span className="px-3 py-1.5 bg-emerald-50 dark:bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 rounded-lg text-xs font-bold">
+            {requests.filter(r=>r.requestType==='DIGITAL_FILE').length} Digital File
           </span>
         </div>
       </div>
@@ -151,7 +201,12 @@ export default function AdminCustomRequestsPage() {
 
         {/* Type filter */}
         <div className="flex bg-white dark:bg-slate-900 p-1 border border-slate-200 dark:border-slate-800 rounded-xl shrink-0">
-          {[{v:"ALL",l:"All Types"},{v:"CUSTOM",l:"Custom"},{v:"INSTANT_QUOTE",l:"Instant Quote"}].map(({v,l})=>(
+          {[
+            {v:"ALL",l:"All Types"},
+            {v:"CUSTOM",l:"Custom"},
+            {v:"INSTANT_QUOTE",l:"Instant Quote"},
+            {v:"DIGITAL_FILE",l:"Digital File"}
+          ].map(({v,l})=>(
             <button key={v} onClick={()=>setTypeFilter(v)}
               className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all whitespace-nowrap ${typeFilter===v?"bg-slate-100 dark:bg-slate-800 text-slate-900 dark:text-white shadow-sm":"text-slate-500 hover:text-slate-700"}`}>
               {l}
@@ -308,27 +363,72 @@ export default function AdminCustomRequestsPage() {
                       className="w-full px-4 py-2.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl text-sm focus:ring-2 focus:ring-primary-500 outline-none"/>
                   </div>
                   <div>
+                    <label className="text-xs font-bold text-slate-500 uppercase tracking-widest mb-1 block">
+                      Digital File URL (STL / CAD / Download Link)
+                    </label>
+                    <div className="flex gap-2">
+                      <input
+                        type="text"
+                        value={digitalFileUrl}
+                        onChange={e => setDigitalFileUrl(e.target.value)}
+                        placeholder="https://... or upload digital file"
+                        className="flex-1 px-4 py-2.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl text-sm focus:ring-2 focus:ring-primary-500 outline-none"
+                      />
+                      <label className="px-4 py-2.5 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 font-bold rounded-xl text-xs flex items-center gap-1.5 cursor-pointer whitespace-nowrap">
+                        {uploadingFile ? "Uploading..." : "Upload File"}
+                        <input
+                          type="file"
+                          accept=".stl,.obj,.step,.stp,.3mf,.zip,.rar"
+                          onChange={handleFileUpload}
+                          disabled={uploadingFile}
+                          className="hidden"
+                        />
+                      </label>
+                    </div>
+                  </div>
+
+                  <div>
                     <label className="text-xs font-bold text-slate-500 uppercase tracking-widest mb-1 block">Message to Customer</label>
                     <textarea value={adminNotes} onChange={e=>setAdminNotes(e.target.value)} rows={3}
-                      placeholder="Explain the quote, timeline, or any technical notes…"
+                      placeholder="Explain the quote, delivery notes, or download instructions…"
                       className="w-full px-4 py-2.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl text-sm focus:ring-2 focus:ring-primary-500 outline-none resize-none"/>
                   </div>
-                  <div className="flex gap-3 pt-2">
+
+                  {/* Dedicated Send File via Email button */}
+                  {(selectedRequest.requestType === "DIGITAL_FILE" || digitalFileUrl) && (
+                    <div className="pt-2">
+                      <button
+                        onClick={() => updateRequestStatus("COMPLETED", true)}
+                        disabled={updating || !digitalFileUrl}
+                        className="w-full py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl text-sm transition-colors flex items-center justify-center gap-2 shadow-sm disabled:opacity-50"
+                      >
+                        {updating ? <Loader2 size={15} className="animate-spin" /> : <Send size={15} />}
+                        📧 Email Digital File to Customer &amp; Complete
+                      </button>
+                      {!digitalFileUrl && (
+                        <p className="text-[11px] text-amber-600 dark:text-amber-400 mt-1 text-center">
+                          Please attach or upload the digital file URL above before emailing customer.
+                        </p>
+                      )}
+                    </div>
+                  )}
+
+                  <div className="flex flex-wrap gap-2 pt-2">
                     {['PENDING','REVIEWING'].includes(selectedRequest.status)&&(
                       <button onClick={()=>updateRequestStatus('QUOTED')} disabled={updating||!quotePrice}
-                        className="flex-1 py-2.5 bg-primary-600 hover:bg-primary-700 text-white font-bold rounded-xl text-sm transition-colors flex items-center justify-center gap-2 disabled:opacity-50">
+                        className="flex-1 py-2.5 bg-primary-600 hover:bg-primary-700 text-white font-bold rounded-xl text-sm transition-colors flex items-center justify-center gap-2 disabled:opacity-50 min-w-[120px]">
                         {updating?<Loader2 size={14} className="animate-spin"/>:<Send size={14}/>} Send Quote
                       </button>
                     )}
                     {selectedRequest.status==='APPROVED'&&(
                       <button onClick={()=>updateRequestStatus('IN_PROGRESS')} disabled={updating}
-                        className="flex-1 py-2.5 bg-purple-600 hover:bg-purple-700 text-white font-bold rounded-xl text-sm transition-colors">
+                        className="flex-1 py-2.5 bg-purple-600 hover:bg-purple-700 text-white font-bold rounded-xl text-sm transition-colors min-w-[120px]">
                         Start Production
                       </button>
                     )}
                     {selectedRequest.status==='IN_PROGRESS'&&(
                       <button onClick={()=>updateRequestStatus('COMPLETED')} disabled={updating}
-                        className="flex-1 py-2.5 bg-green-600 hover:bg-green-700 text-white font-bold rounded-xl text-sm transition-colors">
+                        className="flex-1 py-2.5 bg-green-600 hover:bg-green-700 text-white font-bold rounded-xl text-sm transition-colors min-w-[120px]">
                         Mark Completed
                       </button>
                     )}
